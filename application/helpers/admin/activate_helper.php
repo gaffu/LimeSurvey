@@ -378,8 +378,6 @@ function activateSurvey($iSurveyID, $simulate = false)
     $command = new CDbCommand(Yii::app()->db);
     try
     {
-        print_r($createsurvey);
-        die();
         $execresult = $command->createTable($tabname,$createsurvey);
     }
     catch (CDbException $e)
