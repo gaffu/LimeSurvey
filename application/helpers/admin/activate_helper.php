@@ -350,7 +350,7 @@ function activateSurvey($iSurveyID, $simulate = false)
                 $createsurvey[$arow['fieldname']] = "VARCHAR(5)";
         }
         if ($prow->anonymized == 'N') {
-            $createsurvey['token'] = "VARCHAR(36)";
+            $createsurvey['token'] = "VARCHAR(35)";
         }
         if ($simulate){
             $tempTrim = trim($createsurvey);
