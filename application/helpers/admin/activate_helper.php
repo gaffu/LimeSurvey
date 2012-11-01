@@ -263,9 +263,7 @@ function activateSurvey($iSurveyID, $simulate = false)
     $fieldmap = createFieldMap($iSurveyID,'full',true,false,getBaseLanguageFromSurveyID($iSurveyID));
     
     $createsurvey = array();
-    if ($prow->anonymized == 'N') {
-        $createsurvey['token'] = "VARCHAR(36)";
-    }
+    
     
     foreach ($fieldmap as $j=>$arow) //With each question, create the appropriate field(s)
     {
@@ -351,7 +349,9 @@ function activateSurvey($iSurveyID, $simulate = false)
             default:
                 $createsurvey[$arow['fieldname']] = "VARCHAR(5)";
         }
-
+        if ($prow->anonymized == 'N') {
+            $createsurvey['token'] = "VARCHAR(36)";
+        }
         if ($simulate){
             $tempTrim = trim($createsurvey);
             $brackets = strpos($tempTrim,"(");
@@ -378,6 +378,8 @@ function activateSurvey($iSurveyID, $simulate = false)
     $command = new CDbCommand(Yii::app()->db);
     try
     {
+        print_r($createsurvey);
+        die();
         $execresult = $command->createTable($tabname,$createsurvey);
     }
     catch (CDbException $e)
