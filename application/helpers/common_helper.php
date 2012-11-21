@@ -4434,20 +4434,7 @@ function SendEmailMessage($body, $subject, $to, $from, $sitename, $ishtml=false,
     {
         $sender=$bouncemail;
     }
-
-
-    require_once(APPPATH.'/third_party/phpmailer/class.phpmailer.php');
-    $mail = new PHPMailer;
-    if (!$mail->SetLanguage($defaultlang,APPPATH.'/third_party/phpmailer/language/'))
-    {
-        $mail->SetLanguage('en',APPPATH.'/third_party/phpmailer/language/');
-    }
-    $mail->CharSet = $emailcharset;
-    if (isset($emailsmtpssl) && trim($emailsmtpssl)!=='' && $emailsmtpssl!==0) {
-        if ($emailsmtpssl===1) {$mail->SMTPSecure = "ssl";}
-        else {$mail->SMTPSecure = $emailsmtpssl;}
-    }
-
+    
     $fromname='';
     $fromemail=$from;
     if (strpos($from,'<'))
@@ -4455,99 +4442,183 @@ function SendEmailMessage($body, $subject, $to, $from, $sitename, $ishtml=false,
         $fromemail=substr($from,strpos($from,'<')+1,strpos($from,'>')-1-strpos($from,'<'));
         $fromname=trim(substr($from,0, strpos($from,'<')-1));
     }
-
-    $sendername='';
-    $senderemail=$sender;
-    if (strpos($sender,'<'))
-    {
-        $senderemail=substr($sender,strpos($sender,'<')+1,strpos($sender,'>')-1-strpos($sender,'<'));
-        $sendername=trim(substr($sender,0, strpos($sender,'<')-1));
-    }
-
-    switch ($emailmethod) {
-        case "qmail":
-            $mail->IsQmail();
-            break;
-        case "smtp":
-            $mail->IsSMTP();
-            if ($emailsmtpdebug>0)
-            {
-                $mail->SMTPDebug = $emailsmtpdebug;
-            }
-            if (strpos($emailsmtphost,':')>0)
-            {
-                $mail->Host = substr($emailsmtphost,0,strpos($emailsmtphost,':'));
-                $mail->Port = substr($emailsmtphost,strpos($emailsmtphost,':')+1);
-            }
-            else {
-                $mail->Host = $emailsmtphost;
-            }
-            $mail->Username =$emailsmtpuser;
-            $mail->Password =$emailsmtppassword;
-            if (trim($emailsmtpuser)!="")
-            {
-                $mail->SMTPAuth = true;
-            }
-            break;
-        case "sendmail":
-            $mail->IsSendmail();
-            break;
-        default:
-            //Set to the default value to rule out incorrect settings.
-            $emailmethod="mail";
-            $mail->IsMail();
-    }
-
-    $mail->SetFrom($fromemail, $fromname);
-    $mail->Sender = $senderemail; // Sets Return-Path for error notifications
-    foreach ($to as $singletoemail)
-    {
-        if (strpos($singletoemail, '<') )
+        
+    if($emailmethod == 'mandrillapi'){
+        // Prepare recievers email and name
+        foreach ($to as $singletoemail)
         {
-            $toemail=substr($singletoemail,strpos($singletoemail,'<')+1,strpos($singletoemail,'>')-1-strpos($singletoemail,'<'));
-            $toname=trim(substr($singletoemail,0, strpos($singletoemail,'<')-1));
-            $mail->AddAddress($toemail,$toname);
+            if (strpos($singletoemail, '<') )
+            {
+                $toemail=substr($singletoemail,strpos($singletoemail,'<')+1,strpos($singletoemail,'>')-1-strpos($singletoemail,'<'));
+                $toname=trim(substr($singletoemail,0, strpos($singletoemail,'<')-1));
+                $aTo[] = array(
+                    'email' => $toemail,
+                    'name' => $toname
+                );
+            }else{
+                $aTo[] = array(
+                    'email' => $singletoemail,
+                    'name' => ''
+                );
+            }
         }
-        else
+        // Determin if body is html
+        $textBody = '';
+        $htmlBody = '';
+        if($ishtml === true){
+            $htmlBody = $body;
+        }else{
+            $textBody = $body;
+        }
+        // Setup mandrill call
+        require_once(APPPATH.'third_party/mandrill_api/MandrillAPI.php');
+        $mandrill = new MandrillAPI(getGlobalSetting('mandrillbaseurl'));
+        $data = array(
+            'key' => getGlobalSetting('mandrillapikey'),
+            'message' => array(
+                'html' => $htmlBody,
+                'subject' => $subject,
+                'from_email' => $fromemail,
+                'from_name' => $fromname,
+                'to' => $aTo,
+                'headers' => array(
+                ),
+                'track_opens' => true,
+                'track_clicks' => true,
+                'auto_text' => true,
+                'url_strip_qs' => true,
+                'preserve_recipients' => false,
+                'bcc_address' => '',
+                'merge' => true,
+                'global_merge_vars' => array(
+                    array(
+                        'name' => 'SUBJECT',
+                        'content' => $subject
+                    ),
+                ),
+                'tags' => array(
+                    'limesurvey'
+                )
+            ),
+            'async' => true
+        );
+        // Send email through Mandrill
+        $respons = json_decode($mandrill->send($data), true);
+        // Check for errors
+        if(isset($respons['status']) && $respons['status'] == 'error'){
+            $maildebug = 
+                'Code: '.$respons['code'].'<br />'.
+                'Name: '.$respons['name'].'<br />'.
+                'Message: '.$respons['message'];
+            return false;
+        }
+        return true;
+    }else{             
+        require_once(APPPATH.'/third_party/phpmailer/class.phpmailer.php');
+        $mail = new PHPMailer;
+        if (!$mail->SetLanguage($defaultlang,APPPATH.'/third_party/phpmailer/language/'))
         {
-            $mail->AddAddress($singletoemail);
+            $mail->SetLanguage('en',APPPATH.'/third_party/phpmailer/language/');
         }
-    }
-    if (is_array($customheaders))
-    {
-        foreach ($customheaders as $key=>$val) {
-            $mail->AddCustomHeader($val);
+        $mail->CharSet = $emailcharset;
+        if (isset($emailsmtpssl) && trim($emailsmtpssl)!=='' && $emailsmtpssl!==0) {
+            if ($emailsmtpssl===1) {$mail->SMTPSecure = "ssl";}
+            else {$mail->SMTPSecure = $emailsmtpssl;}
+        }   
+
+        $sendername='';
+        $senderemail=$sender;
+        if (strpos($sender,'<'))
+        {
+            $senderemail=substr($sender,strpos($sender,'<')+1,strpos($sender,'>')-1-strpos($sender,'<'));
+            $sendername=trim(substr($sender,0, strpos($sender,'<')-1));
         }
-    }
-    $mail->AddCustomHeader("X-Surveymailer: $sitename Emailer (LimeSurvey.sourceforge.net)");
-    if (get_magic_quotes_gpc() != "0")	{$body = stripcslashes($body);}
-    if ($ishtml) {
-        $mail->IsHTML(true);
-        $mail->Body = $body;
-        $mail->AltBody = strip_tags(breakToNewline(html_entity_decode($body,ENT_QUOTES,$emailcharset)));
-    } else
-    {
-        $mail->IsHTML(false);
-        $mail->Body = $body;
-    }
+        
+        switch ($emailmethod) {
+            case "qmail":
+                $mail->IsQmail();
+                break;
+            case "smtp":
+                $mail->IsSMTP();
+                if ($emailsmtpdebug>0)
+                {
+                    $mail->SMTPDebug = $emailsmtpdebug;
+                }
+                if (strpos($emailsmtphost,':')>0)
+                {
+                    $mail->Host = substr($emailsmtphost,0,strpos($emailsmtphost,':'));
+                    $mail->Port = substr($emailsmtphost,strpos($emailsmtphost,':')+1);
+                }
+                else {
+                    $mail->Host = $emailsmtphost;
+                }
+                $mail->Username =$emailsmtpuser;
+                $mail->Password =$emailsmtppassword;
+                if (trim($emailsmtpuser)!="")
+                {
+                    $mail->SMTPAuth = true;
+                }
+                break;
+            case "sendmail":
+                $mail->IsSendmail();
+                break;
+            default:
+                //Set to the default value to rule out incorrect settings.
+                $emailmethod="mail";
+                $mail->IsMail();
+        }
 
-    // add the attachment if there is one
-    if(!is_null($attachment))
-        $mail->AddAttachment($attachment);
+        $mail->SetFrom($fromemail, $fromname);
+        $mail->Sender = $senderemail; // Sets Return-Path for error notifications
+        foreach ($to as $singletoemail)
+        {
+            if (strpos($singletoemail, '<') )
+            {
+                $toemail=substr($singletoemail,strpos($singletoemail,'<')+1,strpos($singletoemail,'>')-1-strpos($singletoemail,'<'));
+                $toname=trim(substr($singletoemail,0, strpos($singletoemail,'<')-1));
+                $mail->AddAddress($toemail,$toname);
+            }
+            else
+            {
+                $mail->AddAddress($singletoemail);
+            }
+        }
+        if (is_array($customheaders))
+        {
+            foreach ($customheaders as $key=>$val) {
+                $mail->AddCustomHeader($val);
+            }
+        }
+        $mail->AddCustomHeader("X-Surveymailer: $sitename Emailer (LimeSurvey.sourceforge.net)");
+        if (get_magic_quotes_gpc() != "0")	{$body = stripcslashes($body);}
+        if ($ishtml) {
+            $mail->IsHTML(true);
+            $mail->Body = $body;
+            $mail->AltBody = strip_tags(breakToNewline(html_entity_decode($body,ENT_QUOTES,$emailcharset)));
+        } else
+        {
+            $mail->IsHTML(false);
+            $mail->Body = $body;
+        }
 
-    if (trim($subject)!='') {$mail->Subject = "=?$emailcharset?B?" . base64_encode($subject) . "?=";}
-    if ($emailsmtpdebug>0) {
-        ob_start();
+        // add the attachment if there is one
+        if(!is_null($attachment))
+            $mail->AddAttachment($attachment);
+
+        if (trim($subject)!='') {$mail->Subject = "=?$emailcharset?B?" . base64_encode($subject) . "?=";}
+        if ($emailsmtpdebug>0) {
+            ob_start();
+        }
+        $sent=$mail->Send();
+        $maildebug=$mail->ErrorInfo;
+        if ($emailsmtpdebug>0) {
+            $maildebug .= '<li>'.$clang->gT('SMTP debug output:').'</li><pre>'.strip_tags(ob_get_contents()).'</pre>';
+            ob_end_clean();
+        }
+        $maildebugbody=$mail->Body;
+        //if(!$sent) var_dump($maildebug);
+        return $sent;
     }
-    $sent=$mail->Send();
-    $maildebug=$mail->ErrorInfo;
-    if ($emailsmtpdebug>0) {
-        $maildebug .= '<li>'.$clang->gT('SMTP debug output:').'</li><pre>'.strip_tags(ob_get_contents()).'</pre>';
-        ob_end_clean();
-    }
-    $maildebugbody=$mail->Body;
-    //if(!$sent) var_dump($maildebug);
-    return $sent;
 }
 
 

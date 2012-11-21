@@ -214,6 +214,9 @@
                         <option value='qmail'
                             <?php if (getGlobalSetting('emailmethod')=='qmail') { echo "selected='selected'";} ?>
                             ><?php $clang->eT("Qmail"); ?></option>
+                        <option value='mandrillapi'
+                            <?php if (getGlobalSetting('emailmethod')=='mandrillapi') { echo "selected='selected'";} ?>
+                            ><?php $clang->eT("Mandrill API"); ?></option>
                     </select></li>
                 <li><label for="emailsmtphost"><?php $clang->eT("SMTP host:"); ?></label>
                     <input type='text' size='50' id='emailsmtphost' name='emailsmtphost' value="<?php echo htmlspecialchars(getGlobalSetting('emailsmtphost')); ?>" />&nbsp;<span class='hint'><?php $clang->eT("Enter your hostname and port, e.g.: my.smtp.com:25"); ?></span></li>
@@ -248,6 +251,10 @@
                     </select><br />&nbsp;</li>
                 <li><label for='maxemails'><?php $clang->eT("Email batch size:"); ?></label>
                     <input type='text' size='5' id='maxemails' name='maxemails' value="<?php echo htmlspecialchars(getGlobalSetting('maxemails')); ?>" /></li>
+                <li><label for='mandrillapikey'><?php $clang->eT("Mandrill API key:"); ?></label>
+                    <input type='text' size='50' id='mandrillapikey' name='mandrillapikey' value="<?php echo htmlspecialchars(getGlobalSetting('mandrillapikey')); ?>" /></li>
+                <li><label for='mandrillbaseurl'><?php $clang->eT("Mandrill base url:"); ?></label>
+                    <input type='text' size='50' id='mandrillapikey' name='mandrillbaseurl' value="<?php echo htmlspecialchars(getGlobalSetting('mandrillbaseurl')); ?>" /></li>
             </ul>
 
         </div>

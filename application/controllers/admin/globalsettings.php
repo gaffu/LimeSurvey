@@ -128,6 +128,8 @@ class GlobalSettings extends Survey_Common_Action
         setGlobalSetting('admintheme', sanitize_paranoid_string($_POST['admintheme']));
         setGlobalSetting('adminthemeiconsize', trim(file_get_contents(Yii::app()->getConfig("styledir").DIRECTORY_SEPARATOR.sanitize_paranoid_string($_POST['admintheme']).DIRECTORY_SEPARATOR.'iconsize')));
         setGlobalSetting('emailmethod', strip_tags($_POST['emailmethod']));
+        setGlobalSetting('mandrillapikey', strip_tags($_POST['mandrillapikey']));
+        setGlobalSetting('mandrillbaseurl', strip_tags($_POST['mandrillbaseurl']));
         setGlobalSetting('emailsmtphost', strip_tags(returnGlobal('emailsmtphost')));
         if (returnGlobal('emailsmtppassword') != 'somepassword') {
             setGlobalSetting('emailsmtppassword', strip_tags(returnGlobal('emailsmtppassword')));
