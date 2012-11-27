@@ -120,7 +120,7 @@ if (isset($tmp_survlangs)) { ?>
             if(hasSurveyPermission($surveyid,'surveycontent','read') && $qtypes[$qrrow['type']]['benchmark'] === true)
             { ?>
             <a href='<?php echo $this->createUrl('admin/question/tokencustomattribute/surveyid/'.$surveyid.'/gid/'.$gid.'/qid/'.$qid); ?>'>
-                <img src='<?php echo $sImageURL; ?>defaultanswers.png' alt='<?php $clang->eT("Set benchmark value"); ?>' /></a>
+                <img src='<?php echo $sImageURL; ?>benchmark.png' alt='<?php $clang->eT("Set benchmark value"); ?>' /></a>
             <?php }
             
             if(hasSurveyPermission($surveyid,'surveycontent','read') && $qtypes[$qrrow['type']]['answerscales'] > 0)
