@@ -66,9 +66,10 @@ function setNoAnswerMode($thissurvey)
 * question.php, group.php, survey.php or preview.php
 *
 * @param mixed $ia
+* @param int $surveyId id of the survey, is passed from all method calls
 * @return mixed
 */
-function retrieveAnswers($ia)
+function retrieveAnswers($ia, $surveyId)
 {
     //globalise required config variables
     global $thissurvey; //These are set by index.php
@@ -271,6 +272,9 @@ function retrieveAnswers($ia)
             break;
         case '*': // Equation
             $values=do_equation($ia);
+            break;
+        case 'Z': // Benchmark on custom token attribute
+            $values =  doBenchmark($ia, $surveyId);
             break;
     } //End Switch
 
@@ -6666,4 +6670,36 @@ function do_array_dual($ia)
         $inputnames="";
     }
     return array($answer, $inputnames);
+}
+
+function doBenchmark($ia, $surveyId){  
+    // check that token exist
+    if(!isset($_SESSION['survey_'.$surveyId]['token']) || empty($_SESSION['survey_'.$surveyId]['token'])){
+        throw new Exception('The respondent does not have a non-empty token, which is required for this type of question.');
+    }
+    
+    // Fetch token field
+    //Yii::import('application.models.Question_attributes');
+    $criteria = new CDbCriteria;
+    $criteria->select = 'value';
+    $criteria->condition = 'qid = '.$ia[0].' && attribute = "Token benchmark"';
+    $qAttribute = Question_attributes::model()->find($criteria)->getAttribute('value');
+  
+    // Fetch custom attribute value
+    $criteria->select = $qAttribute;
+    $criteria->condition = 'token = "'.$_SESSION['survey_'.$surveyId]['token'].'"';
+    Tokens_dynamic::sid($surveyId);
+    $tAttribute = Tokens_dynamic::model()->find($criteria)->getAttribute($qAttribute);
+    
+    // Stitch html together
+    $html = '<ul class="answers-list radio-list">
+	<li class="answer-item radio-item">
+		';
+    $html .= '<input checked="checked" type="radio" name="'.$ia[1].'" id="'.$ia[1].'"value="'.$tAttribute.'" />';
+    $html .='
+		<label for="answer'.$ia[1].'" class="answertext">'.$tAttribute.'</label>
+	</li>
+</ul>';
+
+    return array($html, $ia[1]);
 }

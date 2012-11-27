@@ -1270,4 +1270,80 @@ EOD;
         $this->getController()->_css_admin_includes(Yii::app()->getConfig('adminstyleurl')."superfish.css");
         parent::_renderWrappedTemplate($sAction, $aViewUrls, $aData);
     }
+    
+    public function tokenCustomAttribute($surveyid, $gid, $qid){        
+        // Get record if it exist
+        $criteria = new CDbCriteria;  
+        $criteria->condition ='qid = '.$qid.' && attribute="Token benchmark"';        
+
+        // Set benchmark attribute
+        if(!empty($_POST)){            
+            $record = Question_attributes::model()->find($criteria);
+            // If question attribute exist, update it
+            if($record){
+                $record->setAttribute('value',$_POST['attribute']);
+                $record->save();
+            }
+            else{
+                if(!empty($_POST['attribute'])){
+                    // else insert new row if not empty
+                    $aData['value'] = $_POST['attribute'];
+                    $aData['qid'] = $qid;
+                    $aData['attribute'] = 'Token benchmark';
+                    $result=Question_attributes::model()->insertRecords($aData); 
+                }              
+            }
+        }
+        
+        // Prepare view settings
+        $surveyid = sanitize_int($surveyid);
+        $gid = sanitize_int($gid);
+        $qid = sanitize_int($qid);
+
+        $clang = $this->getController()->lang;
+
+        Yii::app()->loadHelper('surveytranslator');
+
+        $questlangs = Survey::model()->findByPk($surveyid)->additionalLanguages;
+        $baselang = Survey::model()->findByPk($surveyid)->language;
+        array_unshift($questlangs, $baselang);
+
+        $questionrow = Questions::model()->findByAttributes(array(
+        'qid' => $qid,
+        'gid' => $gid,
+        'language' => $baselang
+        ))->attributes;
+        $qtproperties = getQuestionTypeList(null, 'array');
+        $qtproperties[$questionrow['type']];
+        if($questionrow['type'] != 'Z'){
+            throw new Exception($clang->gT('Type not supported'));
+        }
+
+        $aSurvey = getSurveyInfo($surveyid);
+        $aCustomAttributes = $aSurvey['attributedescriptions'];          
+        
+        $record = Question_attributes::model()->find($criteria);
+
+        $selected = null;
+        if($record){
+            $selected = $record->getAttribute('value');
+        }
+        
+        $aData = array(
+        'qid' => $qid,
+        'surveyid' => $surveyid,
+        //'langopts' => $langopts,
+        'questionrow' => $questionrow,
+        'questlangs' => $questlangs,
+        'customAttributes' => $aCustomAttributes,
+        'gid' => $gid,
+        'qtproperties' => $qtproperties,
+        'baselang' => $baselang,
+        'selected' => $selected
+        );
+        $aData['display']['menu_bars']['surveysummary'] = 'editdefaultvalues';
+        $aData['display']['menu_bars']['qid_action'] = 'editdefaultvalues';
+
+        $this->_renderWrappedTemplate('survey/Question', 'tokenCustomAttribute', $aData);
+    }
 }

@@ -117,9 +117,12 @@ if (isset($tmp_survlangs)) { ?>
             <img src='<?php echo $sImageURL; ?>blank.gif' alt='' height="<?php echo $iIconSize;?>" width='40' />
             <?php }
 
-
-
-
+            if(hasSurveyPermission($surveyid,'surveycontent','read') && $qtypes[$qrrow['type']]['benchmark'] === true)
+            { ?>
+            <a href='<?php echo $this->createUrl('admin/question/tokencustomattribute/surveyid/'.$surveyid.'/gid/'.$gid.'/qid/'.$qid); ?>'>
+                <img src='<?php echo $sImageURL; ?>defaultanswers.png' alt='<?php $clang->eT("Set benchmark value"); ?>' /></a>
+            <?php }
+            
             if(hasSurveyPermission($surveyid,'surveycontent','read') && $qtypes[$qrrow['type']]['answerscales'] > 0)
             { ?>
             <a href='<?php echo $this->createUrl('admin/question/answeroptions/surveyid/'.$surveyid.'/gid/'.$gid.'/qid/'.$qid); ?>'>
