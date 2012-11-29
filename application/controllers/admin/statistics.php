@@ -420,8 +420,14 @@ class statistics extends Survey_Common_Action {
 		            $result = Questions::model()->getQuestionsForStatistics('title, question', "parent_qid = $flt[0] AND language = '$language'", 'question_order');
 		            $aData['result'][$key1] = $result;
 		            break;
-
-
+                        case "Z": // Benchmark custom token attribute
+                            Survey_dynamic::sid($surveyid);
+                            $criteria = new CDbCriteria();
+                            $criteria->select = $surveyid.'X'.$flt[1].'X'.$flt[0].', id';
+                            $records = Survey_dynamic::model()->findAll($criteria);
+                            $result = CHtml::listData( $records, $surveyid.'X'.$flt[1].'X'.$flt[0], 'id');
+                            $aData['result'][$key1] = array_keys($result);
+                            break;
 		            /*
 		             * This question types use the default settings:
 		             * 	L - List (Radio)
@@ -447,7 +453,7 @@ class statistics extends Survey_Common_Action {
 		    $previousquestiontype = $flt[2];
 
 		}
-
+                
 		// ----------------------------------- END FILTER FORM ---------------------------------------
 
 		Yii::app()->loadHelper('admin/statistics');

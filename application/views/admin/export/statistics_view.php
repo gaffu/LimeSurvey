@@ -201,6 +201,7 @@
                 $previousquestiontype == "Q" ||
                 $previousquestiontype == "R" ||
                 $previousquestiontype == ":" ||
+                    $previousquestiontype == "Z" ||
                 $previousquestiontype == ";")) { ?>
             </tr>
             <tr>
@@ -240,7 +241,7 @@
                 <select name='<?php
                     if ($flt[2] == "M" ) { echo "M";};
                     if ($flt[2] == "P" ) { echo "P";};
-                    echo "{$surveyid}X{$flt[1]}X{$flt[0]}[]'";?>' multiple='multiple'>
+                    echo "{$surveyid}X{$flt[1]}X{$flt[0]}[]'";?> multiple='multiple'>
                 <?php
                 }
         }?>
@@ -1238,7 +1239,30 @@
 
                     echo "\t</select>\n\t</td>\n";
                     break;
+                case "Z":
+                    echo "\t</tr>\n\t<tr>\n";
+                    echo '
+                                <td>';
+                    echo            "<input id='filter{$surveyid}X{$flt[1]}X{$flt[0]}' type='checkbox'  name='summary[]' value='{$surveyid}X{$flt[1]}X{$flt[0]}' />";
+                    echo            "<label for=\"filter{$surveyid}X{$flt[1]}X{$flt[0]}\">
+                                        <span title=\"$flt[5]?\" style=\"cursor: pointer\"> \"$flt[5]?\"</span>
+                                    </label><br />
+";
+                    echo            "\t<select name='{$surveyid}X{$flt[1]}X{$flt[0]}[]' multiple='multiple'>\n";
+                    foreach($result[$key1] as $row)
+                    {
+                        echo "\t<option value='{$row}'";
 
+                        //pre-check
+                        //if (isset($_POST[$myfield]) && is_array($_POST[$myfield]) && in_array($row, $_POST[$myfield])) {echo " selected";}
+
+                        echo '>'.$row."</option>\n";
+                    }
+
+                    echo "      \t</select>\n
+                            \t</td>\n
+                        ";
+                    break;
 
                     /*
                     * This question types use the default settings:
