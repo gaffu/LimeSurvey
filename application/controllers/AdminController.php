@@ -213,6 +213,7 @@ class AdminController extends LSYii_Controller
         'tokens'           => 'tokens',
         'translate'        => 'translate',
         'update'           => 'update',
+        'benchmark'        => 'benchmark'
         );
     }
 
