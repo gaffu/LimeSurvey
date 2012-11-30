@@ -182,6 +182,7 @@ class AdminController extends LSYii_Controller
         return array(
         'assessments'      => 'assessments',
         'authentication'   => 'authentication',
+        'benchmark'        => 'benchmark',
         'checkintegrity'   => 'checkintegrity',
         'conditions'       => 'conditionsaction',
         'database'         => 'database',
