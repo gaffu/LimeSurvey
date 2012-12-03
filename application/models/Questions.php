@@ -64,12 +64,14 @@
         public function relations()
         {
             return array(
-            'groups' => array(self::HAS_ONE, 'Groups', '',
-            'on' => 't.gid = groups.gid AND t.language = groups.language'
-            ),
-            'parents' => array(self::HAS_ONE, 'Questions', '',
-            'on' => 't.parent_qid = parents.qid',
-            ),
+                'groups' => array(self::HAS_ONE, 'Groups', '',
+                'on' => 't.gid = groups.gid AND t.language = groups.language'
+                ),
+                'parents' => array(self::HAS_ONE, 'Questions', '',
+                'on' => 't.parent_qid = parents.qid',
+                ),
+                'answers' => array(self::HAS_MANY, 'Answers', '',
+                    'on' => 't.qid = answers.qid')
             );
         }
 

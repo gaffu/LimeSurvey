@@ -59,8 +59,8 @@ class Answers extends CActiveRecord
     public function relations()
     {
         return array(
-            'questions' => array(self::HAS_ONE, 'Questions', '',
-                'on' => 't.qid = questions.qid',
+            'questions' => array(self::BELONGS_TO, 'Questions', '',
+                'on' => 'questions.qid = t.qid',
             ),
             'groups' => array(self::HAS_ONE, 'Groups', '', 'through' => 'questions',
                 'on' => 'questions.gid = groups.gid'
