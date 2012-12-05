@@ -6,7 +6,7 @@
  * All rights reserved.
  */
 class Benchmark extends Survey_Common_Action {
-
+    
     /**
      * Index page for benchmarking. This page allows setting parameters for
      * how the benchmark are to be performed.
@@ -100,7 +100,7 @@ class Benchmark extends Survey_Common_Action {
         $criteria->with = 'answers';
         $rows = Questions::model()->findAll($criteria);
 
-        // combine questions and answers in an array
+        // combine questions and answers (from answers table) in an array
         foreach ($rows as $row) {
             $qid = $row->getAttribute('qid');
             $qa[$qid] = $row->getAttributes();
@@ -130,13 +130,15 @@ class Benchmark extends Survey_Common_Action {
             }
             $benchmarkValue = $respons[$benchmarkColumn];
             // count the number of answers on the perticular benchmark
-            foreach ($respons as $k => $v) {
-                $t = substr($k, 0, strlen($iSurveyId)+1);
+            // Also include the responses for easier view generation
+            foreach ($respons as $k => $v) {                
                 if (substr($k, 0, strlen($iSurveyId)+1) == $iSurveyId.'X') {
                     if(isset($statistics[$benchmarkValue][$k][$v])){
                         $statistics[$benchmarkValue][$k][$v]++;
+                        $statistics[$benchmarkValue]['responses'][$respons['id']][$k] = $v;
                     }else{
                         $statistics[$benchmarkValue][$k][$v] = 1;
+                        $statistics[$benchmarkValue]['responses'][$respons['id']][$k] = $v;
                     }
                 }                        
             }
@@ -148,7 +150,7 @@ class Benchmark extends Survey_Common_Action {
         $aData['benchmark'] = $benchmarkColumn;
         $this->_renderWrappedTemplate('benchmark', array('view'), $aData);
     }
-
+    
     /**
      * Renders template(s) wrapped in header and footer
      * @param string|array $aViewUrls View url(s)
