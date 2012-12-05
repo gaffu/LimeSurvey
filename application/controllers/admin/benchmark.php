@@ -154,7 +154,7 @@ class Benchmark extends Survey_Common_Action {
             // Also include the responses for easier view generation
             foreach ($respons as $k => $v) {
                 if (substr($k, 0, strlen($iSurveyId) + 1) == $iSurveyId . 'X') {
-                    if (isset($statistics[$benchmarkValue][$k][$v])) {
+                    if (isset($statistics[$benchmarkValue]['summary'][$k][$v])) {
                         $statistics[$benchmarkValue]['summary'][$k][$v]++;
                         $statistics[$benchmarkValue]['responses'][$respons['id']][$k] = $v;
                     } else {
