@@ -238,8 +238,11 @@ class Benchmark extends Survey_Common_Action {
                 $columnCount = 1;
                 $sheet2->write($xlsRow2, $columnCount, $question);                
                 foreach($anwsers as $answer => $answerCount){
-                    $columnCount = 1;
+                    $columnCount = 2;
                     $xlsRow2++;
+                    if(empty($answer)){
+                        $answer = "No Answer";
+                    }
                     $sheet2->write($xlsRow2, $columnCount, $answer);
                     $columnCount++;
                     $sheet2->write($xlsRow2, $columnCount, $answerCount);
