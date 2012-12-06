@@ -257,7 +257,6 @@ class Benchmark extends Survey_Common_Action {
                 $columnCount = 1;
                 // Write question field value                
                 //$sheet2->write($xlsRow2, $columnCount, html_entity_decode($qa[$qid]['question'],ENT_QUOTES, 'UTF-8'));   
-                $qu = $qa[$qid]['question'];
                 $sheet2->write($xlsRow2, $columnCount, $qa[$qid]['question']);
                 foreach ($anwsers as $answer => $answerCount) {
                     $columnCount = 2;
