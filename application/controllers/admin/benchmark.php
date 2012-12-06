@@ -8,27 +8,6 @@
 class Benchmark extends Survey_Common_Action {
 
     /**
-     * The Excel worksheet we are working on
-     *  
-     * @var Spreadsheet_Excel_Writer_Worksheet
-     */
-    protected $sheet;
-
-    /**
-     * The current Excel workbook we are working on
-     * 
-     * @var Xlswriter 
-     */
-    protected $workbook;
-
-    /**
-     * Keeps track of the current row in Excel sheet
-     * 
-     * @var int
-     */
-    protected $xlsRow = 0;
-
-    /**
      * Index page for benchmarking. This page allows setting parameters for
      * how the benchmark are to be performed.
      * @param mixed $iSurveyId the survey id.
@@ -190,20 +169,21 @@ class Benchmark extends Survey_Common_Action {
         $tempdir = Yii::app()->getConfig("tempdir");
         Yii::import('application.libraries.admin.pear.Spreadsheet.Excel.Xlswriter', true);
         $filename = 'statistic-benchmark-survey' . $iSurveyId . '.xls';
-        $this->workbook = new Xlswriter();
+        $workbook = new Xlswriter();
 
-        $this->workbook->setVersion(8);
+        $workbook->setVersion(8);
         // Inform the module that our data will arrive as UTF-8.
         // Set the temporary directory to avoid PHP error messages due to open_basedir restrictions and calls to tempnam("", ...)
-        $this->workbook->setTempDir($tempdir);
+        $workbook->setTempDir($tempdir);
 
         // Create the first worksheet (used for responses)
-        $this->sheet = $this->workbook->addWorksheet(utf8_decode('responses-survey' . $iSurveyId));
-        $this->sheet->setInputEncoding('utf-8');
-        $this->sheet->setColumn(0, 20, 20);
+        $sheet = $workbook->addWorksheet(utf8_decode('responses-survey' . $iSurveyId));
+        $sheet->setInputEncoding('utf-8');
+        $sheet->setColumn(0, 20, 20);
+        $xlsRow = 0;
 
         // create the second worksheet (used for statistics)
-        $sheet2 = $this->workbook->addWorksheet(utf8_decode('summary-survey' . $iSurveyId));
+        $sheet2 = $workbook->addWorksheet(utf8_decode('summary-survey' . $iSurveyId));
         $sheet2->setInputEncoding('utf-8');
         $sheet2->setColumn(0, 20, 20);
         $xlsRow2 = 0;
@@ -214,11 +194,11 @@ class Benchmark extends Survey_Common_Action {
         $xlsDesc = html_entity_decode("Some description", ENT_QUOTES, 'UTF-8');
 
         // Write title and description on sheet 1
-        $this->sheet->write($this->xlsRow, 0, $xlsTitle);
-        $this->xlsRow++;
-        $this->sheet->write($this->xlsRow, 0, $xlsDesc);
-        $this->xlsRow++;
-        $this->xlsRow++;
+        $sheet->write($xlsRow, 0, $xlsTitle);
+        $xlsRow++;
+        $sheet->write($xlsRow, 0, $xlsDesc);
+        $xlsRow++;
+        $xlsRow++;
 
         // Write title and description on sheet 2
         $sheet2->write($xlsRow2, 0, $xlsTitle);
@@ -230,9 +210,9 @@ class Benchmark extends Survey_Common_Action {
         // Loop through all the benchmark values
         foreach ($statistics as $benchmark => $v) {
             // write benchmark info on both pages
-            $this->sheet->write($this->xlsRow, 0, $benchmark);
+            $sheet->write($xlsRow, 0, $benchmark);
             $sheet2->write($xlsRow2, 0, $benchmark);
-            $this->xlsRow++;
+            $xlsRow++;
             // Loop through all the responses for the selected benchmark value
             foreach ($v['responses'] as $respons) {
                 $columnCount = 1;
@@ -241,15 +221,15 @@ class Benchmark extends Survey_Common_Action {
                 // then replace the answer with the given value from the answers table
                 foreach ($respons as $question => $answer) {
                     if ($qa[$question]['parent_qid'] != 0){
-                        $this->sheet->write ($this->xlsRow, $columnCount, $qa[$qa[$question]['parent_qid']]['answers'][$answer]['answer']);
+                        $sheet->write ($xlsRow, $columnCount, $qa[$qa[$question]['parent_qid']]['answers'][$answer]['answer']);
                     } elseif (isset($qa[$question]['answers'])) {
-                        $this->sheet->write($this->xlsRow, $columnCount, $qa[$question]['answers'][$answer]['answer']);
+                        $sheet->write($xlsRow, $columnCount, $qa[$question]['answers'][$answer]['answer']);
                     } else {
-                        $this->sheet->write($this->xlsRow, $columnCount, $answer);
+                        $sheet->write($xlsRow, $columnCount, $answer);
                     }
                     $columnCount++;
                 }
-                $this->xlsRow++;
+                $xlsRow++;
             }
             // Write count for each question / answer on statistic page
             foreach ($v['summary'] as $qid => $anwsers) {
@@ -270,10 +250,10 @@ class Benchmark extends Survey_Common_Action {
                 }
             }
             $xlsRow2++;
-            $this->xlsRow++;
+            $xlsRow++;
         }
-        $this->workbook->send($filename);
-        $this->workbook->close();
+        $workbook->send($filename);
+        $workbook->close();
         exit();
     }
 
