@@ -124,13 +124,25 @@ class Benchmark extends Survey_Common_Action {
         // combine questions and answers (from answers table) in an array
         foreach ($rows as $row) {
             $qid = $row->getAttribute('qid');
-            $qa[$qid] = $row->getAttributes();
+            $attributes = $row->getAttributes();
+            /* Crazy hack to solve faulty database design. If question has parent
+             * then there is a slight possibility that it will be impossible to start
+             * a new survey. This is based on that the dynamic survey question fields
+             * are created by concat parent_id with title. If the qid was used
+             * consistently this would not be necessary.
+             */
+            if ($attributes['parent_qid'] != 0) {
+                $nqid = $attributes['parent_qid'] . $attributes['title'];
+            } else {
+                $nqid = $qid;
+            }
+            $qa[$nqid] = $attributes;
             $relatedRows = $row->getRelated('answers');
             foreach ($relatedRows as $relatedRow) {
                 // Only take the answers with the selected langauage
                 // Yii sqrews up the join so it takes all languages
                 if ($relatedRow->getAttribute('language') == $language) {
-                    $qa[$qid]['answers'][$relatedRow->getAttribute('code')] = $relatedRow->getAttributes();
+                    $qa[$nqid]['answers'][$relatedRow->getAttribute('code')] = $relatedRow->getAttributes();
                 }
             }
         }
@@ -154,18 +166,19 @@ class Benchmark extends Survey_Common_Action {
             // Also include the responses for easier view generation
             foreach ($respons as $k => $v) {
                 if (substr($k, 0, strlen($iSurveyId) + 1) == $iSurveyId . 'X') {
-                    if (isset($statistics[$benchmarkValue]['summary'][$k][$v])) {
-                        $statistics[$benchmarkValue]['summary'][$k][$v]++;
-                        $statistics[$benchmarkValue]['responses'][$respons['id']][$k] = $v;
+                    $key = substr($k, strripos($k, 'X') + 1);
+                    if (isset($statistics[$benchmarkValue]['summary'][$key][$v])) {
+                        $statistics[$benchmarkValue]['summary'][$key][$v]++;
+                        $statistics[$benchmarkValue]['responses'][$respons['id']][$key] = $v;
                     } else {
-                        $statistics[$benchmarkValue]['summary'][$k][$v] = 1;
-                        $statistics[$benchmarkValue]['responses'][$respons['id']][$k] = $v;
+                        $statistics[$benchmarkValue]['summary'][$key][$v] = 1;
+                        $statistics[$benchmarkValue]['responses'][$respons['id']][$key] = $v;
                     }
                 }
             }
         }
-        $this->writeExcel($statistics, $qa,$iSurveyId); 
-        Yii::app()->request->redirect($this->getController()->createUrl('/admin/benchmark/index/surveyid/'.$iSurveyId));
+        $this->writeExcel($statistics, $qa, $iSurveyId);
+        Yii::app()->request->redirect($this->getController()->createUrl('/admin/benchmark/index/surveyid/' . $iSurveyId));
     }
 
     /**
@@ -177,29 +190,28 @@ class Benchmark extends Survey_Common_Action {
         $tempdir = Yii::app()->getConfig("tempdir");
         Yii::import('application.libraries.admin.pear.Spreadsheet.Excel.Xlswriter', true);
         $filename = 'statistic-benchmark-survey' . $iSurveyId . '.xls';
-        $pathToFile = $tempdir . '/'.$filename;
         $this->workbook = new Xlswriter();
 
         $this->workbook->setVersion(8);
         // Inform the module that our data will arrive as UTF-8.
         // Set the temporary directory to avoid PHP error messages due to open_basedir restrictions and calls to tempnam("", ...)
-        $this->workbook->setTempDir($tempdir);      
+        $this->workbook->setTempDir($tempdir);
 
-        // Create the first worksheet
+        // Create the first worksheet (used for responses)
         $this->sheet = $this->workbook->addWorksheet(utf8_decode('responses-survey' . $iSurveyId));
         $this->sheet->setInputEncoding('utf-8');
         $this->sheet->setColumn(0, 20, 20);
-        
-        // create the second worksheet
+
+        // create the second worksheet (used for statistics)
         $sheet2 = $this->workbook->addWorksheet(utf8_decode('summary-survey' . $iSurveyId));
         $sheet2->setInputEncoding('utf-8');
         $sheet2->setColumn(0, 20, 20);
         $xlsRow2 = 0;
-        
-        
+
+
         //$xlsTitle = sprintf($statlang->gT("Field summary for %s"), html_entity_decode("FIX IN CODE", ENT_QUOTES, 'UTF-8'));
-        $xlsTitle = "Some title";
-        $xlsDesc = html_entity_decode("FIX IN CODE; SOME DESCRIPTION", ENT_QUOTES, 'UTF-8');
+        $xlsTitle = html_entity_decode("Some title", ENT_QUOTES, 'UTF-8');
+        $xlsDesc = html_entity_decode("Some description", ENT_QUOTES, 'UTF-8');
 
         // Write title and description on sheet 1
         $this->sheet->write($this->xlsRow, 0, $xlsTitle);
@@ -217,6 +229,7 @@ class Benchmark extends Survey_Common_Action {
 
         // Loop through all the benchmark values
         foreach ($statistics as $benchmark => $v) {
+            // write benchmark info on both pages
             $this->sheet->write($this->xlsRow, 0, $benchmark);
             $sheet2->write($xlsRow2, 0, $benchmark);
             $this->xlsRow++;
@@ -224,33 +237,42 @@ class Benchmark extends Survey_Common_Action {
             foreach ($v['responses'] as $respons) {
                 $columnCount = 1;
                 // For each respons write their answer
-                // TODO: If quesetion has answers stored in the answers table
-                //       then replace the answer with the given value from the answers table
+                // If quesetion has answers stored in the answers table
+                // then replace the answer with the given value from the answers table
                 foreach ($respons as $question => $answer) {
-                    $this->sheet->write($this->xlsRow, $columnCount, $answer);            
+                    if ($qa[$question]['parent_qid'] != 0){
+                        $this->sheet->write ($this->xlsRow, $columnCount, $qa[$qa[$question]['parent_qid']]['answers'][$answer]['answer']);
+                    } elseif (isset($qa[$question]['answers'])) {
+                        $this->sheet->write($this->xlsRow, $columnCount, $qa[$question]['answers'][$answer]['answer']);
+                    } else {
+                        $this->sheet->write($this->xlsRow, $columnCount, $answer);
+                    }
                     $columnCount++;
                 }
                 $this->xlsRow++;
             }
-            // Write count for each question / answer
-            foreach ($v['summary'] as $question => $anwsers) {
+            // Write count for each question / answer on statistic page
+            foreach ($v['summary'] as $qid => $anwsers) {
                 $xlsRow2++;
                 $columnCount = 1;
-                $sheet2->write($xlsRow2, $columnCount, $question);                
-                foreach($anwsers as $answer => $answerCount){
+                // Write question field value                
+                //$sheet2->write($xlsRow2, $columnCount, html_entity_decode($qa[$qid]['question'],ENT_QUOTES, 'UTF-8'));   
+                $qu = $qa[$qid]['question'];
+                $sheet2->write($xlsRow2, $columnCount, $qa[$qid]['question']);
+                foreach ($anwsers as $answer => $answerCount) {
                     $columnCount = 2;
                     $xlsRow2++;
-                    if(empty($answer)){
+                    if (empty($answer)) {
                         $answer = "No Answer";
                     }
                     $sheet2->write($xlsRow2, $columnCount, $answer);
                     $columnCount++;
                     $sheet2->write($xlsRow2, $columnCount, $answerCount);
-                }                
+                }
             }
             $xlsRow2++;
             $this->xlsRow++;
-        }  
+        }
         $this->workbook->send($filename);
         $this->workbook->close();
         exit();
