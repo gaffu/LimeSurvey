@@ -273,15 +273,16 @@ class Benchmark extends Survey_Common_Action {
                     $columnCount = 2;
                     $xlsRow2++;
                     if (empty($answer)) {
-                        $answer = "No Answer";
+                        $ans = "No answer";
                     }
-                    if ($qa[$qid]['parent_qid'] != 0 && isset($qa[$qa[$qid]['parent_qid']]['answers'])) {
-                        $sheet2->write($xlsRow2, $columnCount, $qa[$qa[$qid]['parent_qid']]['answers'][$answer]['answer']);
+                    elseif ($qa[$qid]['parent_qid'] != 0 && isset($qa[$qa[$qid]['parent_qid']]['answers'])) {
+                        $ans = $qa[$qa[$qid]['parent_qid']]['answers'][$answer]['answer'];
                     } elseif (isset($qa[$qid]['answers'])) {
-                        $sheet2->write($xlsRow2, $columnCount, $qa[$qid]['answers'][$answer]['answer']);
+                        $ans = $qa[$qid]['answers'][$answer]['answer'];
                     } else {
-                        $sheet2->write($xlsRow2, $columnCount, $answer);
+                        $ans = $answer;
                     }
+                    $sheet2->write($xlsRow2, $columnCount, $ans);
                     $columnCount++;
                     $sheet2->write($xlsRow2, $columnCount, $answerCount);
                 }
