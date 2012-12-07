@@ -73,7 +73,7 @@ class Benchmark extends Survey_Common_Action {
      * $_POST['qid'] selected question id to use as benchmark
      * @param mixed $iSurveyId the survey id
      */
-    public function generateReport($iSurveyId) {        
+    public function generateReport($iSurveyId) {
         $language = $_POST['language'];
         $bqid = $_POST['bqid']; // The qid for benchmarking
 
@@ -213,8 +213,9 @@ class Benchmark extends Survey_Common_Action {
             $sheet->write($xlsRow, 0, $benchmark);
             $sheet2->write($xlsRow2, 0, $benchmark);
             $xlsRow++;
+            $startRow = $xlsRow+1;
             // Loop through all the responses for the selected benchmark value
-            foreach ($v['responses'] as $respons) {
+            foreach ($v['responses'] as $respons) {                
                 $columnCount = 1;
                 // For each respons write their answer
                 // If quesetion has answers stored in the answers table
@@ -231,6 +232,12 @@ class Benchmark extends Survey_Common_Action {
                 }
                 $xlsRow++;
             }
+            // Do avarage calculation on each answer
+            for ($i = 1; $i < $columnCount; $i++) {
+                $column = $this->numtochars($i+1);
+                $sheet->write($xlsRow, $i, '=AVERAGE('.$column.$startRow.':'.$column.$xlsRow.')');
+            }
+            $xlsRow++;
             // Write count for each question / answer on statistic page
             foreach ($v['summary'] as $qid => $anwsers) {
                 $xlsRow2++;
@@ -254,7 +261,7 @@ class Benchmark extends Survey_Common_Action {
                     $columnCount++;
                     $sheet2->write($xlsRow2, $columnCount, $answerCount);
                 }
-            }
+            }            
             $xlsRow2++;
             $xlsRow++;
         }
@@ -275,6 +282,30 @@ class Benchmark extends Survey_Common_Action {
         $aData['display']['menu_bars']['browse'] = Yii::app()->lang->gT('Select benchmark'); // browse is independent of the above
 
         parent::_renderWrappedTemplate('benchmark', $aViewUrls, $aData);
+    }
+
+    /**
+     * Number to char(s) conversion.
+     * Courtesy of stanislav
+     * http://php.net/manual/en/function.chr.php
+     * @param int $num number to convert
+     * @param int $start start ascii code
+     * @param int $end end ascii code
+     * @return string string representation of the number
+     */
+    function numtochars($num, $start = 65, $end = 90) {
+        $sig = ($num < 0);
+        $num = abs($num);
+        $str = "";
+        $cache = ($end - $start);
+        while ($num != 0) {
+            $str = chr(($num % $cache) + $start - 1) . $str;
+            $num = ($num - ($num % $cache)) / $cache;
+        }
+        if ($sig) {
+            $str = "-" . $str;
+        }
+        return $str;
     }
 
 }
