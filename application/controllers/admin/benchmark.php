@@ -206,14 +206,16 @@ class Benchmark extends Survey_Common_Action {
         $sheet2->write($xlsRow2, 0, $xlsDesc);
         $xlsRow2++;
         $xlsRow2++;
-
+        $format_bold =& $workbook->addFormat();
+        $format_bold->setBold();
         // Loop through all the benchmark values
         foreach ($statistics as $benchmark => $v) {
             // write benchmark info on both pages
-            $sheet->write($xlsRow, 0, $benchmark);
-            $sheet2->write($xlsRow2, 0, $benchmark);
+            $sheet->write($xlsRow, 0, $benchmark, $format_bold);
+            $sheet2->write($xlsRow2, 0, $benchmark, $format_bold);
             $xlsRow++;
             $startRow = $xlsRow+1;
+            $doAverage = array();
             // Loop through all the responses for the selected benchmark value
             foreach ($v['responses'] as $respons) {                
                 $columnCount = 1;
@@ -222,20 +224,26 @@ class Benchmark extends Survey_Common_Action {
                 // then replace the answer with the given value from the answers table
                 foreach ($respons as $question => $answer) {
                     if ($qa[$question]['parent_qid'] != 0 && isset($qa[$qa[$question]['parent_qid']]['answers'])) {
-                        $sheet->write($xlsRow, $columnCount, $qa[$qa[$question]['parent_qid']]['answers'][$answer]['answer']);
+                        $ans = $qa[$qa[$question]['parent_qid']]['answers'][$answer]['answer'];
                     } elseif (isset($qa[$question]['answers'])) {
-                        $sheet->write($xlsRow, $columnCount, $qa[$question]['answers'][$answer]['answer']);
+                        $ans = $qa[$question]['answers'][$answer]['answer'];
                     } else {
-                        $sheet->write($xlsRow, $columnCount, $answer);
+                        $ans = $answer;                        
                     }
+                    if(is_numeric($ans)){
+                        $doAverage[$columnCount] = true;
+                    }
+                    $sheet->write($xlsRow, $columnCount, $ans);
                     $columnCount++;
                 }
                 $xlsRow++;
             }
-            // Do avarage calculation on each answer
+            // Do avarage calculation on each answer if it is allowed
             for ($i = 1; $i < $columnCount; $i++) {
-                $column = $this->numtochars($i+1);
-                $sheet->write($xlsRow, $i, '=AVERAGE('.$column.$startRow.':'.$column.$xlsRow.')');
+                if(isset($doAverage[$i])){
+                    $column = $this->numtochars($i+1);
+                    $sheet->write($xlsRow, $i, '=AVERAGE('.$column.$startRow.':'.$column.$xlsRow.')', $format_bold);
+                }                
             }
             $xlsRow++;
             // Write count for each question / answer on statistic page
