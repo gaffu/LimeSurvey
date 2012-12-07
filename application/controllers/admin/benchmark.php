@@ -292,10 +292,13 @@ class Benchmark extends Survey_Common_Action {
                     } else {
                         $ans = $answer;
                     }
+                    // Write the answer
                     $sheet2->write($xlsRow2, $columnCount, $ans);
                     $columnCount++;
+                    // Write how many picked that perticular answer
                     $sheet2->write($xlsRow2, $columnCount, $answerCount);
                     $columnCount++;
+                    // Write out how many picked the perticular answer as percentage for the given benchmark
                     $sheet2->write($xlsRow2, $columnCount, '='.$answerCount.'/'.$responsesCount, $format_percentage);
                 }
             }            
