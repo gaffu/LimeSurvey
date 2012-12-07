@@ -207,6 +207,8 @@ class Benchmark extends Survey_Common_Action {
         $xlsRow2++;
         $format_bold =& $workbook->addFormat();
         $format_bold->setBold();
+        $questionRow = true;
+        $questionColumn = 1;
         // Loop through all the benchmark values
         foreach ($statistics as $benchmark => $v) {
             // write benchmark info on both pages
@@ -251,6 +253,10 @@ class Benchmark extends Survey_Common_Action {
                 $columnCount = 1;
                 // Write question field value                
                 //$sheet2->write($xlsRow2, $columnCount, html_entity_decode($qa[$qid]['question'],ENT_QUOTES, 'UTF-8'));   
+                if($questionRow){                    
+                    $sheet->write(2, $questionColumn, $qa[$qid]['question']);
+                    $questionColumn++;
+                }
                 $sheet2->write($xlsRow2, $columnCount, $qa[$qid]['question']);
                 foreach ($anwsers as $answer => $answerCount) {
                     $columnCount = 2;
@@ -269,6 +275,7 @@ class Benchmark extends Survey_Common_Action {
                     $sheet2->write($xlsRow2, $columnCount, $answerCount);
                 }
             }            
+            $questionRow = false;
             $xlsRow2++;
             $xlsRow++;
         }
