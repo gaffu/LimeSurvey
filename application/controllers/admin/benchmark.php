@@ -210,18 +210,28 @@ class Benchmark extends Survey_Common_Action {
         $format_bold =& $workbook->addFormat();
         $format_bold->setBold();
         
+        // Set percentage format
+        $format_percentage =& $workbook->addFormat();
+        $format_percentage->setNumFormat("0.00%");
+        
+        // Set 2 decimals format (bold)
+        $format_2decimals =& $workbook->addFormat();
+        $format_2decimals->setNumFormat("0.00");
+        $format_2decimals->setBold();
+        
         // used for writting question text on responses sheet
         $questionRow = true;
         $questionColumn = 1;
         
         // Write info text on summary sheet
-        $sheet2->write(2, 1, 'Question');
-        $sheet2->write(2, 2, 'Answer');
-        $sheet2->write(2, 3, 'Count');
-        $sheet2->write(2, 4, 'Percentage');
+        $sheet2->write(2, 1, 'Question',$format_bold);
+        $sheet2->write(2, 2, 'Answer', $format_bold);
+        $sheet2->write(2, 3, 'Count', $format_bold);
+        $sheet2->write(2, 4, 'Percentage', $format_bold);
         
         // Loop through all the benchmark values
         foreach ($statistics as $benchmark => $v) {
+            $responsesCount = count($v['responses']);
             // write benchmark info on both pages
             $sheet->write($xlsRow, 0, $benchmark, $format_bold);
             $sheet2->write($xlsRow2, 0, $benchmark, $format_bold);
@@ -254,7 +264,7 @@ class Benchmark extends Survey_Common_Action {
             for ($i = 1; $i < $columnCount; $i++) {
                 if(!isset($doAverage[$i])){
                     $column = $this->numtochars($i+1);
-                    $sheet->write($xlsRow, $i, '=AVERAGE('.$column.$startRow.':'.$column.$xlsRow.')', $format_bold);
+                    $sheet->write($xlsRow, $i, '=AVERAGE('.$column.$startRow.':'.$column.$xlsRow.')', $format_2decimals);
                 }                
             }
             $xlsRow++;
@@ -285,6 +295,8 @@ class Benchmark extends Survey_Common_Action {
                     $sheet2->write($xlsRow2, $columnCount, $ans);
                     $columnCount++;
                     $sheet2->write($xlsRow2, $columnCount, $answerCount);
+                    $columnCount++;
+                    $sheet2->write($xlsRow2, $columnCount, '='.$answerCount.'/'.$responsesCount, $format_percentage);
                 }
             }            
             $questionRow = false;
