@@ -172,8 +172,7 @@ class Benchmark extends Survey_Common_Action {
         $workbook = new Xlswriter();
 
         $workbook->setVersion(8);
-        // Inform the module that our data will arrive as UTF-8.
-        // Set the temporary directory to avoid PHP error messages due to open_basedir restrictions and calls to tempnam("", ...)
+
         $workbook->setTempDir($tempdir);
 
         // Create the first worksheet (used for responses)
@@ -230,7 +229,7 @@ class Benchmark extends Survey_Common_Action {
                     } else {
                         $ans = $answer;                        
                     }
-                    if(!is_numeric($ans)){
+                    if(!is_numeric($ans) && !empty($ans)){
                         $doAverage[$columnCount] = false;
                     }
                     $sheet->write($xlsRow, $columnCount, $ans);
