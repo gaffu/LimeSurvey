@@ -144,7 +144,7 @@ class Benchmark extends Survey_Common_Action {
             // count the number of answers on the perticular benchmark
             // Also include the responses for easier view generation
             foreach ($respons as $k => $v) {
-                if (substr($k, 0, strlen($iSurveyId) + 1) == $iSurveyId . 'X') {
+                if (substr($k, 0, strlen($iSurveyId) + 1) == $iSurveyId . 'X' && $benchmarkColumn != $k) {
                     $key = substr($k, strripos($k, 'X') + 1);
                     if (isset($statistics[$benchmarkValue]['summary'][$key][$v])) {
                         $statistics[$benchmarkValue]['summary'][$key][$v]++;
@@ -220,8 +220,8 @@ class Benchmark extends Survey_Common_Action {
                 // If quesetion has answers stored in the answers table
                 // then replace the answer with the given value from the answers table
                 foreach ($respons as $question => $answer) {
-                    if ($qa[$question]['parent_qid'] != 0){
-                        $sheet->write ($xlsRow, $columnCount, $qa[$qa[$question]['parent_qid']]['answers'][$answer]['answer']);
+                    if ($qa[$question]['parent_qid'] != 0) {
+                        $sheet->write($xlsRow, $columnCount, $qa[$qa[$question]['parent_qid']]['answers'][$answer]['answer']);
                     } elseif (isset($qa[$question]['answers'])) {
                         $sheet->write($xlsRow, $columnCount, $qa[$question]['answers'][$answer]['answer']);
                     } else {
@@ -244,7 +244,14 @@ class Benchmark extends Survey_Common_Action {
                     if (empty($answer)) {
                         $answer = "No Answer";
                     }
-                    $sheet2->write($xlsRow2, $columnCount, $answer);
+
+                    if ($qa[$qid]['parent_qid'] != 0) {
+                        $sheet2->write($xlsRow2, $columnCount, $qa[$qa[$qid]['parent_qid']]['answers'][$answer]['answer']);
+                    } elseif (isset($qa[$qid]['answers'])) {
+                        $sheet2->write($xlsRow2, $columnCount, $qa[$qid]['answers'][$answer]['answer']);
+                    } else {
+                        $sheet2->write($xlsRow2, $columnCount, $answer);
+                    }
                     $columnCount++;
                     $sheet2->write($xlsRow2, $columnCount, $answerCount);
                 }
