@@ -205,10 +205,15 @@ class Benchmark extends Survey_Common_Action {
         $sheet2->write($xlsRow2, 0, $xlsDesc);
         $xlsRow2++;
         $xlsRow2++;
+        
+        // Set bold format
         $format_bold =& $workbook->addFormat();
         $format_bold->setBold();
+        
+        // used for writting question text on sheet 1
         $questionRow = true;
         $questionColumn = 1;
+        
         // Loop through all the benchmark values
         foreach ($statistics as $benchmark => $v) {
             // write benchmark info on both pages
