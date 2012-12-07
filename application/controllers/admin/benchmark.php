@@ -73,7 +73,7 @@ class Benchmark extends Survey_Common_Action {
      * $_POST['qid'] selected question id to use as benchmark
      * @param mixed $iSurveyId the survey id
      */
-    public function generateReport($iSurveyId) {
+    public function generateReport($iSurveyId) {        
         $language = $_POST['language'];
         $bqid = $_POST['bqid']; // The qid for benchmarking
 
@@ -220,7 +220,7 @@ class Benchmark extends Survey_Common_Action {
                 // If quesetion has answers stored in the answers table
                 // then replace the answer with the given value from the answers table
                 foreach ($respons as $question => $answer) {
-                    if ($qa[$question]['parent_qid'] != 0) {
+                    if ($qa[$question]['parent_qid'] != 0 && isset($qa[$qa[$question]['parent_qid']]['answers'])) {
                         $sheet->write($xlsRow, $columnCount, $qa[$qa[$question]['parent_qid']]['answers'][$answer]['answer']);
                     } elseif (isset($qa[$question]['answers'])) {
                         $sheet->write($xlsRow, $columnCount, $qa[$question]['answers'][$answer]['answer']);
@@ -244,8 +244,7 @@ class Benchmark extends Survey_Common_Action {
                     if (empty($answer)) {
                         $answer = "No Answer";
                     }
-
-                    if ($qa[$qid]['parent_qid'] != 0) {
+                    if ($qa[$qid]['parent_qid'] != 0 && isset($qa[$qa[$qid]['parent_qid']]['answers'])) {
                         $sheet2->write($xlsRow2, $columnCount, $qa[$qa[$qid]['parent_qid']]['answers'][$answer]['answer']);
                     } elseif (isset($qa[$qid]['answers'])) {
                         $sheet2->write($xlsRow2, $columnCount, $qa[$qid]['answers'][$answer]['answer']);
