@@ -230,8 +230,8 @@ class Benchmark extends Survey_Common_Action {
                     } else {
                         $ans = $answer;                        
                     }
-                    if(is_numeric($ans)){
-                        $doAverage[$columnCount] = true;
+                    if(!is_numeric($ans)){
+                        $doAverage[$columnCount] = false;
                     }
                     $sheet->write($xlsRow, $columnCount, $ans);
                     $columnCount++;
@@ -240,7 +240,7 @@ class Benchmark extends Survey_Common_Action {
             }
             // Do avarage calculation on each answer if it is allowed
             for ($i = 1; $i < $columnCount; $i++) {
-                if(isset($doAverage[$i])){
+                if(!isset($doAverage[$i])){
                     $column = $this->numtochars($i+1);
                     $sheet->write($xlsRow, $i, '=AVERAGE('.$column.$startRow.':'.$column.$xlsRow.')', $format_bold);
                 }                
