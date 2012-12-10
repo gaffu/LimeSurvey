@@ -274,7 +274,7 @@ function retrieveAnswers($ia, $surveyId)
             $values=do_equation($ia);
             break;
         case 'Z': // Benchmark on custom token attribute
-            $values =  doBenchmark($ia, $surveyId);
+            $values = doTokenCustomAttribute($ia, $surveyId);
             break;
     } //End Switch
 
@@ -6672,7 +6672,15 @@ function do_array_dual($ia)
     return array($answer, $inputnames);
 }
 
-function doBenchmark($ia, $surveyId){  
+/**
+ * Method for creating a question containing a custome token attribute as
+ * the only answer. Will create a radio button with the selected attribute.
+ * @param array $ia
+ * @param int $surveyId the survey id
+ * @return string   containing the html output for the input field
+ * @throws Exception    if token is not set will throw an exception
+ */
+function doTokenCustomAttribute($ia, $surveyId){  
     // check that token exist
     if(!isset($_SESSION['survey_'.$surveyId]['token']) || empty($_SESSION['survey_'.$surveyId]['token'])){
         throw new Exception('The respondent does not have a non-empty token, which is required for this type of question.');
