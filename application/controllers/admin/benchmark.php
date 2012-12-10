@@ -307,6 +307,7 @@ class Benchmark extends Survey_Common_Action {
                     // Write out how many picked the perticular answer as percentage for the given benchmark
                     $sheet2->write($xlsRow2, $columnCount, '='.$answerCount.'/'.$responsesCount, $format_percentage);
                 }
+                $xlsRow2++;
             }            
             $questionRow = false;
             $xlsRow2++;
