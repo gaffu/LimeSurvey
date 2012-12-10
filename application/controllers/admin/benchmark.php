@@ -156,7 +156,14 @@ class Benchmark extends Survey_Common_Action {
                 }
             }
         }
-        $this->writeExcel($statistics, $qa, $iSurveyId);
+        
+        // Fetch survey title and description
+        $criteriaSurveyInfo = new CDbCriteria;
+        $criteriaSurveyInfo->select = 'surveyls_title, surveyls_description';
+        $criteriaSurveyInfo->condition = 'surveyls_survey_id ='.$iSurveyId.' AND surveyls_language = "'.$language.'"';
+        $surveyInfo = Surveys_languagesettings::model()->find($criteriaSurveyInfo)->getAttributes();
+
+        $this->writeExcel($iSurveyId, $statistics, $qa, $surveyInfo);
         Yii::app()->request->redirect($this->getController()->createUrl('/admin/benchmark/index/surveyid/' . $iSurveyId));
     }
 
@@ -165,7 +172,7 @@ class Benchmark extends Survey_Common_Action {
      * @param array $statistics array containing responses and counts
      * @param array $qa         array containing questions and answers (from answer table)    
      */
-    protected function writeExcel($statistics, $qa, $iSurveyId) {
+    protected function writeExcel($iSurveyId, $statistics, $qa, $surveyInfo) {
         $tempdir = Yii::app()->getConfig("tempdir");
         Yii::import('application.libraries.admin.pear.Spreadsheet.Excel.Xlswriter', true);
         $filename = 'statistic-benchmark-survey' . $iSurveyId . '.xls';
@@ -187,10 +194,9 @@ class Benchmark extends Survey_Common_Action {
         $sheet2->setColumn(0, 20, 20);
         $xlsRow2 = 0;
 
-
         //$xlsTitle = sprintf($statlang->gT("Field summary for %s"), html_entity_decode("FIX IN CODE", ENT_QUOTES, 'UTF-8'));
-        $xlsTitle = html_entity_decode("Some title", ENT_QUOTES, 'UTF-8');
-        $xlsDesc = html_entity_decode("Some description", ENT_QUOTES, 'UTF-8');
+        $xlsTitle = html_entity_decode($surveyInfo['surveyls_title'], ENT_QUOTES, 'UTF-8');
+        $xlsDesc = html_entity_decode($surveyInfo['surveyls_description'], ENT_QUOTES, 'UTF-8');
 
         // Write title and description on sheet 1
         $sheet->write($xlsRow, 0, $xlsTitle);
