@@ -6687,7 +6687,6 @@ function doTokenCustomAttribute($ia, $surveyId){
     }
     
     // Fetch token field
-    //Yii::import('application.models.Question_attributes');
     $criteria = new CDbCriteria;
     $criteria->select = 'value';
     $criteria->condition = 'qid = '.$ia[0].' && attribute = "Token benchmark"';
