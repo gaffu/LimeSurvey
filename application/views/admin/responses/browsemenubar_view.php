@@ -46,8 +46,10 @@
                     { ?>
                     <a href='<?php echo $this->createUrl("admin/responses/time/surveyid/$surveyid"); ?>'>
                         <img src='<?php echo $sImageURL; ?>statistics_time.png' alt='<?php $clang->eT("Get time statistics from these responses"); ?>' /></a>
-                    <?php }
-            } ?>
+                    <?php } ?>
+            <a href='<?php echo $this->createURL('admin/benchmark/index/surveyid/'.$surveyid); ?> '>
+                    <img src='<?php echo $sImageURL; ?>statistics_benchmark.png' alt='<?php $clang->eT("Get benchmark statistics"); ?>' /></a></a>
+            <?php } ?>
             <img src='<?php echo $sImageURL; ?>separator.gif' class='separator' alt='' />
             <?php if (hasSurveyPermission($surveyid, 'responses', 'export'))
                 { ?>

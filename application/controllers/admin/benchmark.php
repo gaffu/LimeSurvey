@@ -320,7 +320,7 @@ class Benchmark extends Survey_Common_Action {
         $this->getController()->_js_admin_includes(Yii::app()->getConfig('adminscripts') . 'browse.js');
 
         $aData['display']['menu_bars'] = false;
-        $aData['display']['menu_bars']['browse'] = Yii::app()->lang->gT('Select benchmark'); // browse is independent of the above
+        $aData['display']['menu_bars']['browse'] = Yii::app()->lang->gT('Select benchmark');
 
         parent::_renderWrappedTemplate('benchmark', $aViewUrls, $aData);
     }
