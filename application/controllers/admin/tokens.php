@@ -1427,7 +1427,7 @@ class tokens extends Survey_Common_Action
                     }
                     else
                     {
-                        if (SendEmailMessage($modmessage, $modsubject, $to, $from, Yii::app()->getConfig("sitename"), $bHtml, getBounceEmail($iSurveyId), null, $customheaders))
+                        if (SendEmailMessage($modmessage, $modsubject, $to, $from, Yii::app()->getConfig("sitename"), $bHtml, getBounceEmail($iSurveyId), null, $customheaders, $iSurveyId))
                         {
                             // Put date into sent
                             $udequery = Tokens_dynamic::model($iSurveyId)->findByPk($emrow['tid']);

@@ -4424,7 +4424,7 @@ function javascriptEscape($str, $strip_tags=false, $htmldecode=false) {
 * @param mixed $attachment
 * @return bool If successful returns true
 */
-function SendEmailMessage($body, $subject, $to, $from, $sitename, $ishtml=false, $bouncemail=null, $attachment=null, $customheaders="")
+function SendEmailMessage($body, $subject, $to, $from, $sitename, $ishtml=false, $bouncemail=null, $attachment=null, $customheaders="", $iSurveyID=null)
 {
 
     global $maildebug, $maildebugbody;
@@ -4539,6 +4539,9 @@ function SendEmailMessage($body, $subject, $to, $from, $sitename, $ishtml=false,
             ),
             'async' => true
         );
+        if($iSurveyID != null){
+            $data['message']['tags'][] = 'Survey_'.$iSurveyID;
+        }
         // Send email through Mandrill
         $respons = json_decode($mandrill->send($data), true);
         // Check for errors
