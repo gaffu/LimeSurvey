@@ -4422,6 +4422,7 @@ function javascriptEscape($str, $strip_tags=false, $htmldecode=false) {
 * @param mixed $ishtml
 * @param mixed $bouncemail
 * @param mixed $attachment
+* $param int $iSurveyID the survey id
 * @return bool If successful returns true
 */
 function SendEmailMessage($body, $subject, $to, $from, $sitename, $ishtml=false, $bouncemail=null, $attachment=null, $customheaders="", $iSurveyID=null)
