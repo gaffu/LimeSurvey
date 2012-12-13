@@ -31,6 +31,7 @@ function createTokenTable($iSurveyID, $aAttributeFields=array())
     'lastname' => 'varchar(40)',
     'email' => 'text',
     'emailstatus' => 'text',
+    'emailhistory' => 'text',
     'token' => 'varchar(35)',
     'language' => 'varchar(25)',
     'blacklisted' => 'varchar(17)',
