@@ -454,13 +454,18 @@ class tokens extends Survey_Common_Action
                 $action .= '<input type="image" style="float: left" src="'.Yii::app()->getConfig('adminimageurl').'cpdb_16.png" name="viewparticipant" id="viewparticipant" title="'.$clang->gT("View this person in the central participants database").'" alt="'.$clang->gT("View this person in the central participants database").'" onClick=\'window.open("'.Yii::app()->getController()->createUrl("admin/participants/displayParticipants/searchurl/participant_id||equal||".$token['participant_id']).'", "_top")\'>';
             } else {
                 $action .= '<div style="width: 20px; height: 16px; float: left;"></div>';
+            }            
+            if(!empty($token['emailhistory'])){
+                $emailhistory = '<img src="'.Yii::app()->getConfig('adminimageurl').'info.png" title="'.$token['emailhistory'].'" alt="'.$token['emailhistory'].'" />';
+            }else{
+                $emailhistory = '';
             }
-            $aData->rows[$i]['cell'] = array($token['tid'], $action, $token['firstname'], $token['lastname'], $token['email'], $token['emailstatus'], $token['emailhistory'], $token['token'], $token['language'], $token['sent'], $token['remindersent'], $token['remindercount'], $token['completed'], $token['usesleft'], $token['validfrom'], $token['validuntil']);
+            $aData->rows[$i]['cell'] = array($token['tid'], $action, $token['firstname'], $token['lastname'], $token['email'], $token['emailstatus'], $emailhistory , $token['token'], $token['language'], $token['sent'], $token['remindersent'], $token['remindercount'], $token['completed'], $token['usesleft'], $token['validfrom'], $token['validuntil']);
             $attributes = getAttributeFieldNames($iSurveyId);
             foreach ($attributes as $attribute)
             {
                 $aData->rows[$i]['cell'][] = $token[$attribute];
-            }
+            }            
         }
 
         echo ls_json_encode($aData);
