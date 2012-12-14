@@ -15,50 +15,58 @@ class MandrillWebHookController extends LSYii_Controller {
             $post = json_decode($_POST['mandrill_events'], true);
             $post = $post[0];
             // Make sure it is a webhook intended for Limesurvey
-            if (isset($post['msg']['tags']) && $post['msg']['tags'][0] == 'limesurvey' && substr($post['msg']['tags'][1], 0, 6) == 'Survey') {                
+            if (isset($post['msg']['tags']) && $post['msg']['tags'][0] == 'limesurvey' && substr($post['msg']['tags'][1], 0, 6) == 'Survey') {
                 $surveyId = substr($post['msg']['tags'][1], 7);
-                
+
                 // Criteria for the token that the post was intended for
                 $criteria = new CDbCriteria();
                 $criteria->condition = 'email = "' . $post['msg']['email'] . '"';
                 $tokenRow = Tokens_dynamic::model($surveyId)->find($criteria);
                 $emailStatus = $tokenRow->getAttribute('emailstatus');
                 $emailhistory = $tokenRow->getAttribute('emailhistory');
-                
-                // Switch through the type of event and act accordingly
+
+                // Switch through the type of event and act accordingly date('d F Y H:i:s', 
                 switch ($post['event']) {
                     case 'send' :
-                        $tokenRow->setAttribute('emailstatus', $post['event']);
-                        $tokenRow->setAttribute('emailhistory', $emailhistory . date('d F Y H:i:s', $post['ts']) . ' - ' . $post['event'] . "\n");
+                        $emailhistory .= $post['ts'] . ' - ' . $post['event'] . "\n";
+                        $tokenRow->setAttribute('emailstatus', $this->sortHistory($emailhistory));
+                        $tokenRow->setAttribute('emailhistory', $emailhistory);
                         break;
                     case 'hard_bounce':
-                        $tokenRow->setAttribute('emailstatus', $post['event']);
-                        $tokenRow->setAttribute('emailhistory', $emailhistory . date('d F Y H:i:s', $post['ts']) . ' - ' . $post['event'] . "\n");
+                        $emailhistory .= $post['ts'] . ' - ' . $post['event'] . "\n";
+                        $tokenRow->setAttribute('emailstatus', $this->sortHistory($emailhistory));
+                        $tokenRow->setAttribute('emailhistory', $emailhistory);
                         break;
                     case 'soft_bounce':
-                        $tokenRow->setAttribute('emailstatus', $post['event']);
-                        $tokenRow->setAttribute('emailhistory', $emailhistory . date('d F Y H:i:s', $post['ts']) . ' - ' . $post['event'] . "\n");
+                        $emailhistory .= $post['ts'] . ' - ' . $post['event'] . "\n";
+                        $tokenRow->setAttribute('emailstatus', $this->sortHistory($emailhistory));
+                        $tokenRow->setAttribute('emailhistory', $emailhistory);
                         break;
                     case 'open':
-                        $tokenRow->setAttribute('emailstatus', $post['event']);
-                        $tokenRow->setAttribute('emailhistory', $emailhistory . date('d F Y H:i:s', $post['ts']) . ' - ' . $post['event'] . "\n");
+                        $emailhistory .= $post['ts'] . ' - ' . $post['event'] . "\n";
+                        $tokenRow->setAttribute('emailstatus', $this->sortHistory($emailhistory));
+                        $tokenRow->setAttribute('emailhistory', $emailhistory);
                         break;
                     case 'click':
                         $last = count($post['msg']['clicks']) - 1;
-                        $tokenRow->setAttribute('emailstatus', $post['event']);
-                        $tokenRow->setAttribute('emailhistory', $emailhistory . date('d F Y H:i:s', $post['ts']) . ' - ' . $post['event'] . ' - ' . $post['msg']['clicks'][$last]['url'] . "\n");
+                        $emailhistory .= $post['ts'] . ' - ' . $post['event'] . ' - ' . $post['msg']['clicks'][$last]['url'] . "\n";
+                        $tokenRow->setAttribute('emailstatus', $this->sortHistory($emailhistory));
+                        $tokenRow->setAttribute('emailhistory', $emailhistory);
                         break;
                     case 'spam':
-                        $tokenRow->setAttribute('emailstatus', $post['event']);
-                        $tokenRow->setAttribute('emailhistory', $emailhistory . date('d F Y H:i:s', $post['ts']) . ' - ' . $post['event'] . "\n");
+                        $emailhistory .= $post['ts'] . ' - ' . $post['event'] . "\n";
+                        $tokenRow->setAttribute('emailstatus', $this->sortHistory($emailhistory));
+                        $tokenRow->setAttribute('emailhistory', $emailhistory);
                         break;
                     case 'unsub':
-                        $tokenRow->setAttribute('emailstatus', $post['event']);
-                        $tokenRow->setAttribute('emailhistory', $emailhistory . date('d F Y H:i:s', $post['ts']) . ' - ' . $post['event'] . "\n");
+                        $emailhistory .= $post['ts'] . ' - ' . $post['event'] . "\n";
+                        $tokenRow->setAttribute('emailstatus', $this->sortHistory($emailhistory));
+                        $tokenRow->setAttribute('emailhistory', $emailhistory);
                         break;
                     case 'reject':
-                        $tokenRow->setAttribute('emailstatus', $post['event']);
-                        $tokenRow->setAttribute('emailhistory', $emailhistory . date('d F Y H:i:s', $post['ts']) . ' - ' . $post['event'] . "\n");
+                        $emailhistory .= $post['ts'] . ' - ' . $post['event'] . "\n";
+                        $tokenRow->setAttribute('emailstatus', $this->sortHistory($emailhistory));
+                        $tokenRow->setAttribute('emailhistory', $emailhistory);
                         break;
                     default:
                         return;
@@ -67,6 +75,24 @@ class MandrillWebHookController extends LSYii_Controller {
                 $tokenRow->save();
             }
         }
+    }
+
+    /**
+     * Sorts the history string by date. Mandrill does not guarantee webhooks
+     * will be posted in chronological order.
+     * @param string $emailhistory the history string
+     * @return string the newest event type
+     */
+    function sortHistory(&$emailhistory) {
+        $histories = explode("\n", $emailhistory);
+        sort($histories);
+        $emailhistory = '';
+        foreach ($histories as $history) {
+            $emailhistory .= $history . "\n";
+        }
+        echo $histories[0];
+        $firstEvent = explode(' - ', $histories[1]);
+        return $firstEvent[1];
     }
 
 }
