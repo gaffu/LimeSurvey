@@ -91,7 +91,7 @@ class MandrillWebHookController extends LSYii_Controller {
             if(trim($histories[$i], ' ') == "\n"){
                 unset($histories[$i]);
             }else{
-                $emailhistory .= $history . "\n";
+                $emailhistory .= $histories[$i] . "\n";
             }
         }
         $firstEvent = explode(' - ', $histories[1]);
