@@ -456,7 +456,22 @@ class tokens extends Survey_Common_Action
                 $action .= '<div style="width: 20px; height: 16px; float: left;"></div>';
             }            
             if(!empty($token['emailhistory'])){
-                $emailhistory = '<img src="'.Yii::app()->getConfig('adminimageurl').'info.png" title="'.$token['emailhistory'].'" alt="'.$token['emailhistory'].'" />';
+                $histories = explode("\n", $token['emailhistory']);
+                $counthistories = count($histories);
+                for($h=0; $h < $counthistories; $h++){
+                    $time = explode(' ', $histories[$h], 2);
+                    if($h ==  $counthistories-1){
+                        $histories[$h] = str_replace($time[0], date('d F Y H:i:s', intval($time[0])), $histories[$h]);
+                    }else{
+                        $histories[$h] = str_replace($time[0], date('d F Y H:i:s', intval($time[0])), $histories[$h])."\n";
+                    }                    
+                }
+                $emailHistory = '';
+                foreach($histories as $history){
+                    $emailHistory .= $history;
+                }
+                $e= microtime();
+                $emailhistory = '<img src="'.Yii::app()->getConfig('adminimageurl').'info.png" title="'.$emailHistory.'" alt="'.$emailHistory.'" />';
             }else{
                 $emailhistory = '';
             }
