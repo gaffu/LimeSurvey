@@ -435,7 +435,7 @@ class tokens extends Survey_Common_Action
                 $action .= '<div style="width: 20px; height: 16px; float: left;"></div>';
             }
             $action .= '<input type="image" style="float: left" src="' . Yii::app()->getConfig('adminimageurl') . 'token_delete.png" title="' . $clang->gT("Delete token entry") . '" alt="' . $clang->gT("Delete token entry") . '" onclick=\'if (confirm("' . $clang->gT("Are you sure you want to delete this entry?") . ' (' . $token['tid'] . ')")) {$("#displaytokens").delRowData(' . $token['tid'] . ');$.post(delUrl,{tid:' . $token['tid'] . '});}\'>';
-            if (strtolower($token['emailstatus']) == 'ok' || strtolower($token['emailstatus']) == 'open' || strtolower($token['emailstatus']) == 'click')
+            if (strtolower($token['emailstatus']) == 'ok' || strtolower($token['emailstatus']) == 'open' || strtolower($token['emailstatus']) == 'click' || strtolower($token['emailstatus']) == 'send')
             {
                 if($token['completed'] == 'N' && $token['usesleft'] > 0)
                 {
