@@ -28,7 +28,8 @@ class MandrillWebHookController extends LSYii_Controller {
                 // Switch through the type of event and act accordingly
                 switch ($post['event']) {
                     case 'send' :
-                        return;
+                        $tokenRow->setAttribute('emailstatus', $post['event']);
+                        $tokenRow->setAttribute('emailhistory', $emailhistory . date('d F Y H:i:s', $post['ts']) . ' - ' . $post['event'] . "\n");
                         break;
                     case 'hard_bounce':
                         $tokenRow->setAttribute('emailstatus', $post['event']);
