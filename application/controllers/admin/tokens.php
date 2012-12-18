@@ -454,7 +454,8 @@ class tokens extends Survey_Common_Action
                 $action .= '<input type="image" style="float: left" src="'.Yii::app()->getConfig('adminimageurl').'cpdb_16.png" name="viewparticipant" id="viewparticipant" title="'.$clang->gT("View this person in the central participants database").'" alt="'.$clang->gT("View this person in the central participants database").'" onClick=\'window.open("'.Yii::app()->getController()->createUrl("admin/participants/displayParticipants/searchurl/participant_id||equal||".$token['participant_id']).'", "_top")\'>';
             } else {
                 $action .= '<div style="width: 20px; height: 16px; float: left;"></div>';
-            }            
+            }
+            // Format the email history
             if(!empty($token['emailhistory'])){
                 $tmpHistory = '';
                 $timestamps = unserialize($token['emailhistory']);

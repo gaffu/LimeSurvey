@@ -2,6 +2,7 @@
 
 /**
  * Class for recieving post request from Mandrill webhooks
+ * Copyright (C) 2012 Jeppe Poss
  */
 class MandrillWebHookController extends LSYii_Controller {
 
