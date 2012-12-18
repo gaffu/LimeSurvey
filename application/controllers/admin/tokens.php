@@ -1310,7 +1310,7 @@ class tokens extends Survey_Common_Action
 
         if (Yii::app()->request->getPost('bypassbademails') == 'Y')
         {
-            $SQLemailstatuscondition = "emailstatus = 'OK'";
+            $SQLemailstatuscondition = "emailstatus = 'OK' OR emailstatus = 'open' OR emailstatus = 'send' OR emailstatus = 'click'";
         }
         else
         {
