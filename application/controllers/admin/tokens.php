@@ -464,7 +464,7 @@ class tokens extends Survey_Common_Action
                     foreach($histories as $history){
                         $tmpHistory .= $date.' - '.$history['event'];
                         if($history['event'] == 'click'){
-                            $tmpHistory .= $history['msg']['clicks'][0]['url'];
+                            $tmpHistory .= ' - '.$history['msg']['clicks'][0]['url'];
                         }
                         $tmpHistory .= "\n";
                     }
