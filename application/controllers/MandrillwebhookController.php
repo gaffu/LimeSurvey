@@ -16,11 +16,14 @@ class MandrillWebHookController extends LSYii_Controller {
             $post = json_decode($_POST['mandrill_events'], true);
             $post = $post[0];
             // Make sure it is a webhook intended for Limesurvey
-            if (isset($post['msg']['tags'])) {
+            if (isset($post['msg']['tags'])) {                
                 if ($post['msg']['tags'][0] == 'limesurvey' || substr($post['msg']['tags'][0], 0, 6) == 'Survey') {
                     if ($post['msg']['tags'][1] == 'limesurvey' || substr($post['msg']['tags'][1], 0, 6) == 'Survey') {
-
-                        $surveyId = substr($post['msg']['tags'][1], 7);
+                        if ($post['msg']['tags'][0] == 'limesurvey') {
+                            $surveyId = substr($post['msg']['tags'][1], 7);
+                        } else {
+                            $surveyId = substr($post['msg']['tags'][0], 7);
+                        }
 
                         // Criteria for the token that the post was intended for
                         $criteria = new CDbCriteria();
