@@ -32,7 +32,7 @@ class MandrillWebHookController extends LSYii_Controller {
                         $emailhistory = unserialize($tokenRow->getAttribute('emailhistory'));
 
                         // Add new post request to the emailhistory array
-                        $emailhistory[$post['msg']['ts']][] = $post;
+                        $emailhistory[$post['ts']][] = $post;
                         // sort it so the newest is at the start of the array
                         krsort($emailhistory);
                         foreach ($emailhistory as $history) {
