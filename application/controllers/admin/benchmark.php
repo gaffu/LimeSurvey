@@ -76,6 +76,11 @@ class Benchmark extends Survey_Common_Action {
     public function generateReport($iSurveyId) {
         $language = $_POST['language'];
         $bqid = $_POST['bqid']; // The qid for benchmarking
+        if(isset($_POST['useCodes']) && $_POST['useCodes'] == 1){
+            $useCodes = true;
+        }else{
+            $useCodes = false;
+        }
 
         $iSurveyId = sanitize_int($iSurveyId);
 
@@ -156,14 +161,14 @@ class Benchmark extends Survey_Common_Action {
                 }
             }
         }
-        
+
         // Fetch survey title and description
         $criteriaSurveyInfo = new CDbCriteria;
         $criteriaSurveyInfo->select = 'surveyls_title, surveyls_description';
         $criteriaSurveyInfo->condition = 'surveyls_survey_id ='.$iSurveyId.' AND surveyls_language = "'.$language.'"';
         $surveyInfo = Surveys_languagesettings::model()->find($criteriaSurveyInfo)->getAttributes();
 
-        $this->writeExcel($iSurveyId, $statistics, $qa, $surveyInfo);
+        $this->writeExcel($iSurveyId, $statistics, $qa, $surveyInfo, $useCodes);
         Yii::app()->request->redirect($this->getController()->createUrl('/admin/benchmark/index/surveyid/' . $iSurveyId));
     }
 
@@ -172,7 +177,7 @@ class Benchmark extends Survey_Common_Action {
      * @param array $statistics array containing responses and counts
      * @param array $qa         array containing questions and answers (from answer table)    
      */
-    protected function writeExcel($iSurveyId, $statistics, $qa, $surveyInfo) {
+    protected function writeExcel($iSurveyId, $statistics, $qa, $surveyInfo, $useCodes = false) {
         $tempdir = Yii::app()->getConfig("tempdir");
         Yii::import('application.libraries.admin.pear.Spreadsheet.Excel.Xlswriter', true);
         $filename = 'statistic-benchmark-survey' . $iSurveyId . '.xls';
@@ -252,7 +257,11 @@ class Benchmark extends Survey_Common_Action {
                 // then replace the answer with the given value from the answers table
                 foreach ($respons as $question => $answer) {
                     if ($qa[$question]['parent_qid'] != 0 && isset($qa[$qa[$question]['parent_qid']]['answers'])) {
-                        $ans = $qa[$qa[$question]['parent_qid']]['answers'][$answer]['answer'];
+                        if(isset($qa[$qa[$question]['parent_qid']]['answers'][$answer]['code']) && $useCodes === true){
+                            $ans = $qa[$qa[$question]['parent_qid']]['answers'][$answer]['code'];
+                        }else{
+                            $ans = $qa[$qa[$question]['parent_qid']]['answers'][$answer]['answer'];
+                        }                        
                     } elseif (isset($qa[$question]['answers'])) {
                         $ans = $qa[$question]['answers'][$answer]['answer'];
                     } else {
