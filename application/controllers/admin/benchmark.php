@@ -74,6 +74,7 @@ class Benchmark extends Survey_Common_Action {
      * @param mixed $iSurveyId the survey id
      */
     public function generateReport($iSurveyId) {
+        $completionstate = $_POST['completionstate'];
         $language = $_POST['language'];
         $bqid = $_POST['bqid']; // The qid for benchmarking
         if(isset($_POST['useCodes']) && $_POST['useCodes'] == 1){
@@ -130,9 +131,17 @@ class Benchmark extends Survey_Common_Action {
                 }
             }
         }
+        
+        // Condition for filtering all, complete or incomplete responses
+        $condition = '';
+        if($completionstate == 'complete'){
+            $condition = 'submitdate is NOT null';
+        }elseif($completionstate == 'incomplete'){
+            $condition = 'submitdate is null';
+        }
 
         Survey_dynamic::sid($iSurveyId);
-        $responses = Survey_dynamic::model()->findAllAsArray();
+        $responses = Survey_dynamic::model()->findAllAsArray($condition);
 
         // Count answers
         $benchmarkColumn = null;
