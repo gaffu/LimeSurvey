@@ -199,7 +199,6 @@ class Benchmark extends Survey_Common_Action {
         $sheet2->setColumn(0, 20, 20);
         $xlsRow2 = 0;
 
-        //$xlsTitle = sprintf($statlang->gT("Field summary for %s"), html_entity_decode("FIX IN CODE", ENT_QUOTES, 'UTF-8'));
         $xlsTitle = html_entity_decode($surveyInfo['surveyls_title'], ENT_QUOTES, 'UTF-8');
         $xlsDesc = html_entity_decode($surveyInfo['surveyls_description'], ENT_QUOTES, 'UTF-8');
 
