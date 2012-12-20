@@ -273,7 +273,7 @@ function retrieveAnswers($ia, $surveyId)
         case '*': // Equation
             $values=do_equation($ia);
             break;
-        case 'Z': // Benchmark on custom token attribute
+        case '9': // Benchmark on custom token attribute
             $values = doTokenCustomAttribute($ia, $surveyId);
             break;
     } //End Switch
