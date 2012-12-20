@@ -4427,7 +4427,6 @@ function javascriptEscape($str, $strip_tags=false, $htmldecode=false) {
 */
 function SendEmailMessage($body, $subject, $to, $from, $sitename, $ishtml=false, $bouncemail=null, $attachment=null, $customheaders="", $iSurveyID=null)
 {
-
     global $maildebug, $maildebugbody;
 
     $clang = Yii::app()->lang;
@@ -4519,8 +4518,6 @@ function SendEmailMessage($body, $subject, $to, $from, $sitename, $ishtml=false,
                 'from_email' => $fromemail,
                 'from_name' => $fromname,
                 'to' => $aTo,
-                'headers' => array(
-                ),
                 'track_opens' => true,
                 'track_clicks' => true,
                 'auto_text' => true,
@@ -4542,6 +4539,10 @@ function SendEmailMessage($body, $subject, $to, $from, $sitename, $ishtml=false,
         );
         if($iSurveyID != null){
             $data['message']['tags'][] = 'Survey_'.$iSurveyID;
+        }
+        foreach($customheaders as $header){
+            $tmpHeader = explode(': ', $header);
+            $data['message']['headers'][$tmpHeader[0]] = $tmpHeader[1];
         }
         // Send email through Mandrill
         $respons = json_decode($mandrill->send($data), true);
