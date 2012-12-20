@@ -346,7 +346,7 @@ function activateSurvey($iSurveyID, $simulate = false)
             case '*': // Equation
                 $createsurvey[$arow['fieldname']] = "text";
                 break;
-            case '9': // Benchmark custom token attribute
+            case 'Z': // Benchmark custom token attribute
                 $createsurvey[$arow['fieldname']] = "VARCHAR(255)";
                 break;
             default:

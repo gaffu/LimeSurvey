@@ -1248,7 +1248,7 @@ EOD;
                 ))->attributes;
         $qtproperties = getQuestionTypeList(null, 'array');
         $qtproperties[$questionrow['type']];
-        if ($questionrow['type'] != '9') {
+        if ($questionrow['type'] != 'Z') {
             throw new Exception($clang->gT('Type not supported'));
         }
 
