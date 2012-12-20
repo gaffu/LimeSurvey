@@ -261,7 +261,7 @@ function getQuestionTypeList($SelectedCode = "T", $ReturnType = "selector")
     'assessable' => 0,
     'answerscales' => 0,
     'benchmark' => false),
-    "9" => array('description' => $clang->gT("Custom attribute"),
+    "Z" => array('description' => $clang->gT("Custom attribute"),
     'group' => $group['Tokens'],
     'subquestions' => 0,
     'hasdefaultvalues' => 0,
