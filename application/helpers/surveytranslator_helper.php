@@ -229,7 +229,7 @@
         $supportedLanguages['fr']['description'] = $clang->gT('French');
         $supportedLanguages['fr']['nativedescription'] = 'Fran&#231;ais';
         $supportedLanguages['fr']['rtl'] = false;
-        $supportedLanguages['fr']['dateformat'] = 2;
+        $supportedLanguages['fr']['dateformat'] = 5;
         $supportedLanguages['fr']['radixpoint'] = 1;
 
         // Galician
@@ -423,7 +423,7 @@
 
         // Romanian
         $supportedLanguages['ro']['description'] = $clang->gT('Romanian');
-        $supportedLanguages['ro']['nativedescription'] = 'Rom&#226;nesc';
+        $supportedLanguages['ro']['nativedescription'] = 'Rom&#226;na';
         $supportedLanguages['ro']['rtl'] = false;
         $supportedLanguages['ro']['dateformat'] = 1;
         $supportedLanguages['ro']['radixpoint'] = 1;
@@ -471,7 +471,7 @@
         $supportedLanguages['es']['radixpoint'] = 1;
 
         // Spanish (Chile)
-        $supportedLanguages['es-CL']['description'] = $clang->gT('Spanish (Mexico)');
+        $supportedLanguages['es-CL']['description'] = $clang->gT('Spanish (Chile)');
         $supportedLanguages['es-CL']['nativedescription'] = 'Espa&#241;ol chileno';
         $supportedLanguages['es-CL']['rtl'] = false;
         $supportedLanguages['es-CL']['dateformat'] = 5;
@@ -635,7 +635,7 @@
     function getJSDateFromDateFormat($sDateformat)
     {
         // The only difference from dateformat is that Jsdate does not support truncated years
-        return str_replace("yyyy", "yy", $sDateformat);
+        return str_replace(array('yyyy','MM','M'), array('yy','NN','NN'), $sDateformat);
     }
 
 
@@ -649,7 +649,7 @@
     */
     function getDateFormatDataForQID($aQidAttributes, $mThisSurvey)
     {
-        if (trim($aQidAttributes['date_format'])!='')
+        if (isset($aQidAttributes['date_format']) && trim($aQidAttributes['date_format'])!='')
         {
             $aDateFormatDetails = array();
             $aDateFormatDetails['dateformat'] = trim($aQidAttributes['date_format']);

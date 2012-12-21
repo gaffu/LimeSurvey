@@ -2,7 +2,7 @@
 <div class='header ui-widget-header'>
     <?php $clang->eT("Edit answer options"); ?>
 </div>
-<form id='editanswersform' name='editanswersform' method='post' action='<?php echo $this->createUrl('admin/database'); ?>'>
+<?php echo CHtml::form(array("admin/database"), 'post', array('id'=>'editanswersform', 'name'=>'editanswersform')); ?>
     <input type='hidden' name='sid' value='<?php echo $surveyid; ?>' />
     <input type='hidden' name='gid' value='<?php echo $gid; ?>' />
     <input type='hidden' name='qid' value='<?php echo $qid; ?>' />
@@ -27,8 +27,8 @@
         var saveaslabletitle  = '<?php $clang->eT('Save as label set','js'); ?>';
         var lanameurl = '<?php echo Yii::app()->createUrl('/admin/labels/getAllSets'); ?>';
         var lasaveurl = '<?php echo Yii::app()->createUrl('/admin/labels/ajaxSets'); ?>';
-        var lsdetailurl = '<?php echo Yii::app()->createUrl('/admin/question/ajaxlabelsetdetails'); ?>';
-        var lspickurl = '<?php echo Yii::app()->createUrl('/admin/question/ajaxlabelsetpicker'); ?>';
+        var lsdetailurl = '<?php echo Yii::app()->createUrl('/admin/question/sa/ajaxlabelsetdetails'); ?>';
+        var lspickurl = '<?php echo Yii::app()->createUrl('/admin/question/sa/ajaxlabelsetpicker'); ?>';
         var check = true;
         var lasuccess = '<?php $clang->eT('The records have been saved successfully!'); ?>';
         var lafail = '<?php $clang->eT('Sorry, the request failed!'); ?>';

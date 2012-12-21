@@ -37,9 +37,10 @@ class Authentication extends Survey_Common_Action
 
         if ($bCanLogin && !is_array($bCanLogin))
         {
-            if (Yii::app()->request->getPost('action'))
+            if (Yii::app()->request->getPost('action') ||  !is_null(Yii::app()->request->getQuery('onepass')))
             {
-                $aData = $this->_doLogin(Yii::app()->request->getPost('user'), Yii::app()->request->getPost('password'));
+
+                $aData = $this->_doLogin(Yii::app()->request->getParam('user'), Yii::app()->request->getPost('password'),Yii::app()->request->getQuery('onepass',''));
 
                 if (!isset($aData['errormsg']))
                 {
@@ -247,15 +248,15 @@ class Authentication extends Survey_Common_Action
     * @param string $sPassword The password to login with
     * @return Array of data containing errors for the view
     */
-    private function _doLogin($sUsername, $sPassword)
+    private function _doLogin($sUsername, $sPassword, $sOneTimePassword)
     {
         $identity = new UserIdentity(sanitize_user($sUsername), $sPassword);
 
-        if (!$identity->authenticate())
+        if (!$identity->authenticate($sOneTimePassword))
         {
             return $this->_getAuthenticationFailedErrorMessage();
         }
-
+        @session_regenerate_id(); // Prevent session fixation
         return $this->_setLoginSessions($identity);
     }
 
@@ -289,7 +290,7 @@ class Authentication extends Survey_Common_Action
         Yii::app()->session['templateeditormode'] = $user->templateeditormode;
         Yii::app()->session['questionselectormode'] = $user->questionselectormode;
         Yii::app()->session['dateformat'] = $user->dateformat;
-        Yii::app()->session['checksessionpost'] = randomChars(10);
+        Yii::app()->session['session_hash'] = hash('sha256',getGlobalSetting('SessionName').$user->users_name.$user->uid);
     }
 
     /**
@@ -298,16 +299,15 @@ class Authentication extends Survey_Common_Action
     */
     private function _setLanguageSettings($user)
     {
-
-        if ($user->lang=='auto')
-        {
-            $sLanguage= getBrowserLanguage();
-        }
-        elseif (Yii::app()->request->getPost('loginlang') != 'default')
+        if (Yii::app()->request->getPost('loginlang') != 'default')
         {
             $user->lang = sanitize_languagecode(Yii::app()->request->getPost('loginlang'));
             $user->save();
             $sLanguage=$user->lang;
+        }
+        else if ($user->lang=='auto')
+        {
+            $sLanguage= getBrowserLanguage();
         }
         else
         {
@@ -325,7 +325,7 @@ class Authentication extends Survey_Common_Action
     {
         $clang = $this->getController()->lang;
         Yii::app()->session['pw_notify'] = false;
-        if (strtolower($_POST['password']) === 'password')
+        if (strtolower(Yii::app()->request->getPost('password','') ) === 'password')
         {
             Yii::app()->session['pw_notify'] = true;
             Yii::app()->session['flashmessage'] = $clang->gT('Warning: You are still using the default password (\'password\'). Please change your password and re-login again.');

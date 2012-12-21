@@ -1,5 +1,4 @@
-<form method='post' action='<?php echo $this->createUrl("admin/user/userrights");?>'>
-
+<?php echo CHtml::form(array("admin/user/sa/userrights"), 'post', array('name'=>'moduserrightsform', 'id'=>'moduserrightsform')); ?>
 <table width='100%' border='0'>
 <tr>
 <td colspan='8' class='header ui-widget-header' align='center'>
@@ -12,15 +11,13 @@
 $userlist = getUserList();
 foreach ($userlist as $usr) {
     if ($usr['uid'] == $postuserid) {
-        $squery = "SELECT create_survey, configurator, create_user, delete_user, superadmin, participant_panel,manage_template, manage_label FROM {{users}} WHERE uid=".Yii::app()->session['loginID'];	//		added by Dennis
-        $sresult = dbSelectLimitAssoc($squery); //Checked
-        $parent = $sresult->read();
+        $squery = "SELECT create_survey, configurator, create_user, delete_user, superadmin, participant_panel,manage_template, manage_label FROM {{users}} WHERE uid=".Yii::app()->session['loginID'];    //        added by Dennis
+        $parent = Yii::app()->db->createCommand($squery)->queryRow();
 
         // Initial SuperAdmin has parent_id == 0
         $adminquery = "SELECT uid FROM {{users}} WHERE parent_id=0";
-        $adminresult = dbSelectLimitAssoc($adminquery, 1);
-        $row=$adminresult->read();
-		?>
+        $row = Yii::app()->db->createCommand($adminquery)->queryRow();
+        ?>
 
         <tr>
 
@@ -28,6 +25,8 @@ foreach ($userlist as $usr) {
         if($row['uid'] == Yii::app()->session['loginID'])
         { // RENAMED AS SUPERADMIN
             echo "<th align='center' class='admincell'>".$clang->gT("Super-Administrator")."</th>\n";
+        }
+        if($parent['participant_panel']) {
             echo "<th align='center' >".$clang->gT("Participant panel")."</th>\n";
         }
         if($parent['create_survey']) {
@@ -48,7 +47,7 @@ foreach ($userlist as $usr) {
         if($parent['manage_label']) {
             echo "<th align='center'>".$clang->gT("Manage labels")."</th>\n";
         }
-		?>
+        ?>
 
         </tr>
         <tr>
@@ -61,7 +60,11 @@ foreach ($userlist as $usr) {
                 echo " checked='checked' ";
             }
             echo "onclick=\"if (this.checked == true) { document.getElementById('create_survey').checked=true;document.getElementById('configurator').checked=true;document.getElementById('participant_panel').checked=true;document.getElementById('configurator').checked=true;document.getElementById('create_user').checked=true;document.getElementById('delete_user').checked=true;document.getElementById('manage_template').checked=true;document.getElementById('manage_label').checked=true;}\"";
-            echo " /></td>\n";
+            echo " />\n";
+        }
+        
+        if($parent['participant_panel']) {
+            echo "</td>\n";
             // Only Initial SuperAdmmin can give Participant Panel's right
             echo "<td align='center'><input type=\"checkbox\"  class=\"checkboxbtn\" name=\"participant_panel\" id=\"participant_panel\" value=\"participant_panel\"";
             if($usr['participant_panel']) {
@@ -69,6 +72,7 @@ foreach ($userlist as $usr) {
             }
             echo " /></td>\n";
         }
+        
         if($parent['create_survey']) {
             echo "<td align='center'><input type=\"checkbox\"  class=\"checkboxbtn\" name=\"create_survey\" id=\"create_survey\" value=\"create_survey\"";
             if($usr['create_survey']) {
@@ -111,7 +115,7 @@ foreach ($userlist as $usr) {
             }
             echo " /></td>\n";
         }
-		?>
+        ?>
         </tr>
 
         <tr>
@@ -124,6 +128,6 @@ foreach ($userlist as $usr) {
         </table>
         </form>
         <?php continue;
-    }	// if
-}	// foreach
+    }    // if
+}    // foreach
 ?>

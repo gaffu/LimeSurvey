@@ -1,6 +1,6 @@
 <div class='header'>
     <input type='image' src='<?php echo $sImageURL; ?>close.png' style='float:right;'
-        onclick="window.open('<?php echo $this->createUrl("admin/labels/view/lid/".$lid); ?>', '_top')" alt='<?php $clang->eT("Close"); ?>'/>
+        onclick="window.open('<?php echo $this->createUrl("admin/labels/sa/view/lid/".$lid); ?>', '_top')" alt='<?php $clang->eT("Close"); ?>'/>
     <?php if ($action == "newlabelset") { $clang->eT("Create or import new label set(s)");}
         else {$clang->eT("Edit label set"); } ?>
 </div>
@@ -14,8 +14,7 @@
             <?php } ?>
     </ul>
     <div id='neweditlblset0'>
-        <form method='post' class='form30' id='labelsetform' action='<?php echo $this->createUrl("admin/labels/process"); ?>' onsubmit="return isEmpty(document.getElementById('label_name'), '<?php $clang->eT("Error: You have to enter a name for this label set.","js"); ?>')">
-
+        <?php echo CHtml::form(array("admin/labels/sa/process"), 'post',array('class'=>'form30','id'=>'labelsetform','onsubmit'=>"return isEmpty(document.getElementById('label_name'), '".$clang->gT("Error: You have to enter a name for this label set.","js")."')")); ?>
             <ul>
                 <li><label for='label_name'><?php $clang->eT("Set name:"); ?></label>
                     <input type='hidden' name='languageids' id='languageids' value='<?php echo $langids; ?>' />
@@ -60,7 +59,7 @@
     </div>
     <?php if ($action == "newlabelset"){ ?>
         <div id='neweditlblset1'>
-            <form enctype='multipart/form-data' id='importlabels' name='importlabels' action='<?php echo $this->createUrl('admin/labels/import'); ?>' method='post'>
+            <?php echo CHtml::form(array("admin/labels/sa/import"), 'post',array('enctype'=>'multipart/form-data','id'=>'importlabels','name'=>"importlabels")); ?>
                 <div class='header ui-widget-header'>
                     <?php $clang->eT("Import label set(s)"); ?>
                 </div><ul>

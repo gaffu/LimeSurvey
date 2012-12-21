@@ -22,38 +22,34 @@
  */
 class ParticipantAttributeNames extends CActiveRecord
 {
-	/**
-	 * Returns the static model of Participant Attribute Names table
-	 *
-	 * @static
-	 * @access public
-     * @param string $class
-	 * @return CActiveRecord
-	 */
-
     /**
-    * Returns the primary key of this table
-    *
-    * @access public
-    * @return string
-    */
-    public function primaryKey()
-    {
+     * Returns the primary key of this table
+     *
+     * @access public
+     * @return string
+     */
+    public function primaryKey() {
         return 'attribute_id';
     }
 
-	public static function model($class = __CLASS__)
-	{
-		return parent::model($class);
-	}
+    /**
+     * Returns the static model of ParticipantAttributeNames table
+     *
+     * @static
+     * @access public
+     * @param string $class
+     * @return ParticipantAttributeNames
+     */
+    public static function model($class = __CLASS__) {
+        return parent::model($class);
+    }
 
-	/**
-	 * @return string the associated database table name
-	 */
-	public function tableName()
-	{
-		return '{{participant_attribute_names}}';
-	}
+    /**
+     * @return string the associated database table name
+     */
+    public function tableName() {
+        return '{{participant_attribute_names}}';
+    }
 
 	/**
 	 * @return array validation rules for model attributes.
@@ -226,7 +222,8 @@ class ParticipantAttributeNames extends CActiveRecord
         $data = Yii::app()->db->createCommand()
                               ->select('*')
                               ->from('{{participant_attribute}}')
-                              ->where('participant_id = "'.$participantid.'" AND attribute_id = '.$attributeid)
+                              ->where('participant_id = :participant_id AND attribute_id = :attribute_id')
+                              ->bindValues(array(':participant_id'=>$participantid, ':attribute_id'=>$attributeid))
                               ->queryRow();
         return $data;
     }
@@ -280,6 +277,7 @@ class ParticipantAttributeNames extends CActiveRecord
     // this is a very specific function used to get the attributes that are not present for the participant
     function getnotaddedAttributes($attributeid)
     {
+        $output = array();
         $notin=array();
     	foreach($attributeid as $row)
     	{

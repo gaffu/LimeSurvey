@@ -1,6 +1,5 @@
 <div id='resources'>
-    <form class='form30' id='browsesurveyresources' name='browsesurveyresources'
-          action='<?php echo $this->createUrl("admin/kcfinder/index/load/browse"); ?>' method='get' target="_blank">
+    <?php echo CHtml::form(array("admin/kcfinder/index/load/browse"), 'post', array('id'=>'browsesurveyresources', 'name'=>'browsesurveyresources', 'target'=>'_blank', 'class'=>'form30')); ?>
         <ul>
             <li>
                 <label>&nbsp;</label>
@@ -10,12 +9,12 @@
             <li>
                 <label>&nbsp;</label>
                 <input type='button'<?php echo $disabledIfNoResources; ?>
-                       onclick='window.open("<?php echo $this->createUrl("admin/export/resources/export/survey/surveyid/$surveyid"); ?>", "_blank")'
+                       onclick='window.open("<?php echo $this->createUrl("admin/export/sa/resources/export/survey/surveyid/$surveyid"); ?>", "_blank")'
                        value="<?php $clang->eT("Export Resources As ZIP Archive") ?>"  />
             </li>
         </ul>
     </form>
-    <form enctype='multipart/form-data'  class='form30' id='importsurveyresources' name='importsurveyresources' action='<?php echo $this->createUrl('admin/survey/importsurveyresources/'); ?>' method='post' onsubmit='return validatefilename(this,"<?php $clang->eT('Please select a file to import!', 'js'); ?>");'>
+    <?php echo CHtml::form(array('admin/survey/sa/importsurveyresources'), 'post', array('id'=>'importsurveyresources', 'name'=>'importsurveyresources', 'class'=>'form30', 'enctype'=>'multipart/form-data', 'onsubmit'=>'return validatefilename(this,"'.$clang->gT('Please select a file to import!', 'js').'");')); ?>
         <input type='hidden' name='surveyid' value='<?php echo $surveyid; ?>' />
         <input type='hidden' name='action' value='importsurveyresources' />
         <ul>

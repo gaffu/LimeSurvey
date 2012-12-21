@@ -1,5 +1,5 @@
 <div id='copy'>
-    <form class='form30' action='<?php echo $this->createUrl('admin/survey/copy'); ?>' id='copysurveyform' method='post'>
+    <?php echo CHtml::form(array('admin/survey/sa/copy'), 'post', array('id'=>'copysurveyform', 'name'=>'copysurveyform', 'class'=>'form30')); ?>
         <ul>
             <li><label for='copysurveylist'><?php $clang->eT("Select survey to copy:"); ?> </label>
                 <select id='copysurveylist' name='copysurveylist' required="required">
@@ -15,7 +15,7 @@
                 <input id='copysurveyexcludepermissions' name="copysurveyexcludepermissions" type="checkbox"/></li>
             <li><label for='copysurveyexcludeanswers'><?php echo $clang->gT("Exclude answers?"); ?> </label>
                 <input id='copysurveyexcludeanswers' name="copysurveyexcludeanswers" type="checkbox" /></li>
-            <li><label for='copysurveyresetconditions'><?php echo $clang->gT("Reset conditions?"); ?></label>
+            <li><label for='copysurveyresetconditions'><?php echo $clang->gT("Reset conditions/relevance?"); ?></label>
                 <input id='copysurveyresetconditions' name="copysurveyresetconditions" type="checkbox" /></li>
         </ul>
         <p><input type='submit' value='<?php $clang->eT("Copy survey"); ?>' />

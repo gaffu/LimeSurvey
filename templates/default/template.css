@@ -847,14 +847,6 @@ table.clearall-result td {
   margin-left: 1em;
 }
 
-.numeric-multi ul {
-
-}
-
-.numeric-multi span,.multiple-short-txt .question .answer ul li span {
-  font-style: italic;
-}
-
 .numeric-multi p.tip.problem {
   color: #f30;
   font-weight: bold;
@@ -1428,7 +1420,7 @@ div.questionTitle {
 }
 
 /* Question Index */
-.withindex .outerframe {
+.withindex.outerframe {
   margin-left: 1em;
   margin-right: 26em;
 }

@@ -359,11 +359,9 @@ class CheckIntegrity extends Survey_Common_Action
         {
             $sTableName = substr(reset($aRow), strlen($sDBPrefix));
             if ($sTableName == 'survey_permissions' || $sTableName == 'survey_links' || $sTableName == 'survey_url_parameters') continue;
-            $iSurveyID = substr($sTableName, strpos($sTableName, '_') + 1);
-            $count = $surveys = Survey::model()->findAllByPk($iSurveyID);
-            if (Survey::model()->hasErrors()) safeDie(Survey::model()->getError());
-
-            if ($count == 0) {
+            $aTableName=explode('_',$sTableName);
+            $iSurveyID = $aTableName[1];
+            if (!in_array($iSurveyID, $sids)) {
                 $sDate = date('YmdHis') . rand(1, 1000);
                 $sOldTable = "survey_{$iSurveyID}";
                 $sNewTable = "old_survey_{$iSurveyID}_{$sDate}";
@@ -381,9 +379,7 @@ class CheckIntegrity extends Survey_Common_Action
         {
             $sTableName = substr(reset($aRow), strlen($sDBPrefix));
             $iSurveyID = substr($sTableName, strpos($sTableName, '_') + 1);
-            $count = count(Survey::model()->findAllByPk($iSurveyID));
-            if (Survey::model()->hasErrors()) safeDie(Survey::model()->getError());
-            if ($count == 0) {
+            if (!in_array($iSurveyID, $sids)) {
                 $sDate = date('YmdHis') . rand(1, 1000);
                 $sOldTable = "tokens_{$iSurveyID}";
                 $sNewTable = "old_tokens_{$iSurveyID}_{$sDate}";
@@ -401,27 +397,25 @@ class CheckIntegrity extends Survey_Common_Action
         // TMSW Conditions->Relevance:  Replace this with analysis of relevance
         $conditions = Conditions::model()->findAll();
         if (Conditions::model()->hasErrors()) safeDie(Conditions::model()->getError());
+        $okQuestion = array();
         foreach ($conditions as $condition)
         {
-            $iRowCount = count(Questions::model()->findAll());
-            if (Questions::model()->hasErrors()) safeDie(Questions::model()->getError());
-
-            if (!$iRowCount) {
-                $aDelete['conditions'][] = array('cid' => $condition['cid'], 'reason' => 'No matching QID');
-            }
-
             if ($condition['cqid'] != 0) { // skip case with cqid=0 for codnitions on {TOKEN:EMAIL} for instance
-                $iRowCount = Questions::model()->countByAttributes(array('qid' => $condition['cqid']));
-                if (Questions::model()->hasErrors()) safeDie(Questions::model()->getError());
-                if (!$iRowCount) {
-                    $aDelete['conditions'][] = array('cid' => $condition['cid'], 'reason' => $clang->gT('No matching CQID'));
+                if (!array_key_exists($condition['cqid'], $okQuestion)) {
+                    $iRowCount = Questions::model()->countByAttributes(array('qid' => $condition['cqid']));
+                    if (Questions::model()->hasErrors()) safeDie(Questions::model()->getError());                
+                    if (!$iRowCount) {
+                        $aDelete['conditions'][] = array('cid' => $condition['cid'], 'reason' => $clang->gT('No matching CQID'));
+                    } else {
+                        $okQuestion[$condition['cqid']] = $condition['cqid'];
+                    }
                 }
             }
             if ($condition['cfieldname']) //Only do this if there actually is a 'cfieldname'
             {
                 if (preg_match('/^\+{0,1}[0-9]+X[0-9]+X*$/', $condition['cfieldname'])) { // only if cfieldname isn't Tag such as {TOKEN:EMAIL} or any other token
                     list ($surveyid, $gid, $rest) = explode('X', $condition['cfieldname']);
-                    $iRowCount = count(Groups::model()->findAllByPk($gid));
+                    $iRowCount = count(Groups::model()->findAllByAttributes(array('gid'=>$gid)));
                     if (Groups::model()->hasErrors()) safeDie(Groups::model()->getError());
                     if (!$iRowCount) $aDelete['conditions'][] = array('cid' => $condition['cid'], 'reason' => $clang->gT('No matching CFIELDNAME group!') . " ($gid) ({$condition['cfieldname']})");
                 }
@@ -435,15 +429,11 @@ class CheckIntegrity extends Survey_Common_Action
         /**********************************************************************/
         /*     Check question attributes                                      */
         /**********************************************************************/
-        $question_attributes = Question_attributes::model()->findAll();
+        $question_attributes = Question_attributes::model()->findAllBySql('select qid from {{question_attributes}} where qid not in (select qid from {{questions}})');
         if (Question_attributes::model()->hasErrors()) safeDie(Question_attributes::model()->getError());
         foreach ($question_attributes as $question_attribute)
         {
-            $iRowCount = Questions::model()->countByAttributes(array('qid' => $question_attribute['qid']));
-            if (Questions::model()->hasErrors()) safeDie(Questions::model()->getError());
-            if (!$iRowCount) {
-                $aDelete['questionattributes'][] = array('qid' => $question_attribute['qid']);
-            }
+            $aDelete['questionattributes'][] = array('qid' => $question_attribute['qid']);
         } // foreach
 
 
@@ -530,7 +520,7 @@ class CheckIntegrity extends Survey_Common_Action
         if (Assessment::model()->hasErrors()) safeDie(Assessment::model()->getError());
         foreach ($assessments as $assessment)
         {
-            $iAssessmentCount = count(Groups::model()->findAllByPk($assessment['gid']));
+            $iAssessmentCount = count(Groups::model()->findAllByPk(array('gid'=>$assessment['gid'], 'language'=>$assessment['language'])));
             if (Groups::model()->hasErrors()) safeDie(Groups::model()->getError());
             if (!$iAssessmentCount) {
                 $aDelete['assessments'][] = array('id' => $assessment['id'], 'assessment' => $assessment['name'], 'reason' => $clang->gT('No matching group'));
@@ -541,12 +531,17 @@ class CheckIntegrity extends Survey_Common_Action
         /**********************************************************************/
         $answers = Answers::model()->findAll();
         if (Answers::model()->hasErrors()) safeDie(Answers::model()->getError());
+        $okQuestion = array();
         foreach ($answers as $answer)
         {
-            $iAnswerCount = Questions::model()->countByAttributes(array('qid' => $answer['qid']));
-            if (Questions::model()->hasErrors()) safeDie(Questions::model()->getError());
-            if (!$iAnswerCount) {
-                $aDelete['answers'][] = array('qid' => $answer['qid'], 'code' => $answer['code'], 'reason' => $clang->gT('No matching question'));
+            if (!array_key_exists($answer['qid'], $okQuestion)) {
+                $iAnswerCount = Questions::model()->countByAttributes(array('qid' => $answer['qid']));
+                if (Questions::model()->hasErrors()) safeDie(Questions::model()->getError());
+                if (!$iAnswerCount) {
+                    $aDelete['answers'][] = array('qid' => $answer['qid'], 'code' => $answer['code'], 'reason' => $clang->gT('No matching question'));
+                }  else {
+                    $okQuestion[$answer['qid']] = $answer['qid'];
+                }
             }
         }
 
@@ -588,20 +583,19 @@ class CheckIntegrity extends Survey_Common_Action
         /**********************************************************************/
         $questions = Questions::model()->findAll();
         if (Questions::model()->hasErrors()) safeDie(Questions::model()->getError());
+        $groups = Groups::model()->findAll();
+        if (Groups::model()->hasErrors()) safeDie(Groups::model()->getError());
+        $gids = array();
+        foreach ($groups as $group) $gids[] = $group['gid'];
+        
         foreach ($questions as $question)
         {
             //Make sure the group exists
-            $criteria = new CDbCriteria;
-            $criteria->compare('gid', $question['gid']);
-            $iQuestionCount = count(Groups::model()->findAll($criteria));
-            if (Groups::model()->hasErrors()) safeDie(Groups::model()->getError());
-            if (!$iQuestionCount) {
+            if (!in_array($question['gid'], $gids)) {
                 $aDelete['questions'][] = array('qid' => $question['qid'], 'reason' => $clang->gT('No matching group') . " ({$question['gid']})");
             }
             //Make sure survey exists
-            $iQuestionCount = count(Survey::model()->findAllByPk($question['sid']));
-            if (Survey::model()->hasErrors()) safeDie(Survey::model()->getError());
-            if (!$iQuestionCount) {
+            if (!in_array($question['sid'], $sids)) {
                 $aDelete['questions'][] = array('qid' => $question['qid'], 'reason' => $clang->gT('There is no matching survey.') . " ({$question['sid']})");
             }
         }
@@ -641,8 +635,8 @@ class CheckIntegrity extends Survey_Common_Action
             $aFullOldSIDs[$iSurveyID][] = $sTable;
         }
         $aOldSIDs = array_unique($aOldSIDs);
-        $sQuery = 'SELECT sid FROM {{surveys}} ORDER BY sid';
-        $oResult = dbExecuteAssoc($sQuery) or safeDie('Couldn\'t get unique survey ids');
+        //$sQuery = 'SELECT sid FROM {{surveys}} ORDER BY sid';
+        //$oResult = dbExecuteAssoc($sQuery) or safeDie('Couldn\'t get unique survey ids');
         $surveys = Survey::model()->findAll();
         if (Survey::model()->hasErrors()) safeDie(Survey::model()->getError());
         $aSIDs = array();
@@ -714,7 +708,7 @@ class CheckIntegrity extends Survey_Common_Action
             $aTokenSIDs[] = $iSurveyID;
             $aFullOldTokenSIDs[$iSurveyID][] = $sTable;
         }
-        $aOldTokenSIDs = array_unique($aOldTokenSIDs);
+        $aOldTokenSIDs = array_unique($aTokenSIDs);
         $surveys = Survey::model()->findAll();
         if (Survey::model()->hasErrors()) safeDie(Survey::model()->getError());
         $aSIDs = array();
@@ -722,13 +716,9 @@ class CheckIntegrity extends Survey_Common_Action
         {
             $aSIDs[] = $survey['sid'];
         }
-        foreach ($oResult->readAll() as $aRow)
-        {
-            $aTokenSIDs[] = $aRow['sid'];
-        }
         foreach ($aOldTokenSIDs as $iOldTokenSID)
         {
-            if (!in_array($iOldTokenSID, $aTokenSIDs)) {
+            if (!in_array($iOldTokenSID, $aOldTokenSIDs)) {
                 foreach ($aFullOldTokenSIDs[$iOldTokenSID] as $sTableName)
                 {
                     $aDelete['orphantokentables'][] = $sTableName;

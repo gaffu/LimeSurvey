@@ -171,6 +171,7 @@ class tokens extends Survey_Common_Action
             {
                 case "OFF":
                     $flags.="/notls"; // Really Off
+                    break;
                 case "SSL":
                     $flags.="/ssl/novalidate-cert";
                     break;
@@ -278,7 +279,6 @@ class tokens extends Survey_Common_Action
         }
         // Javascript
         $this->getController()->_js_admin_includes(Yii::app()->getConfig('adminscripts') . "tokens.js");
-        $this->getController()->_js_admin_includes(Yii::app()->getConfig('adminscripts') . "tokentocpdb.js");
         $this->getController()->_js_admin_includes(Yii::app()->getConfig('generalscripts') . "jquery/jquery.multiselect.min.js");
         $this->getController()->_js_admin_includes(Yii::app()->getConfig('generalscripts') . "jquery/jqGrid/js/i18n/grid.locale-en.js");
         $this->getController()->_js_admin_includes(Yii::app()->getConfig('generalscripts') . "jquery/jqGrid/js/jquery.jqGrid.min.js");
@@ -372,7 +372,7 @@ class tokens extends Survey_Common_Action
     * @param it takes the session user data loginID
     * @return JSON encoded string containg sharing information
     */
-    function getTokens_json($iSurveyId)
+    function getTokens_json($iSurveyId, $search = null)
     {
         // CHECK TO SEE IF A TOKEN TABLE EXISTS FOR THIS SURVEY
         $bTokenExists = tableExists('{{tokens_' . $iSurveyId . '}}');
@@ -389,96 +389,100 @@ class tokens extends Survey_Common_Action
         $limit = Yii::app()->request->getPost('rows');
         $limit = isset($limit) ? $limit : 25; //Stop division by zero errors
         $page = isset($page) ? $page : 1; //Stop division by zero errors
-        $tokens = Tokens_dynamic::model($iSurveyId)->findAll(array("order"=>$sidx. " ". $sord, "offset"=>($page - 1) * $limit, "limit"=>$limit));
-
+        
         $aData = new stdClass;
         $aData->page = $page;
-        $aData->records = Tokens_dynamic::model($iSurveyId)->count();
+        
+        if (!empty($search)) {
+            $condition = Tokens_dynamic::model($iSurveyId)->getSearchMultipleCondition($search);
+        } else { 
+            $condition = new CDbCriteria();
+        }
+                
+        $condition->order = $sidx. " ". $sord;
+        $condition->offset = ($page - 1) * $limit;
+        $condition->limit = $limit;
+        $tokens = Tokens_dynamic::model($iSurveyId)->findAll($condition);
+        
+        $condition->offset=0;
+        $condition->limit=0;        
+        $aData->records = Tokens_dynamic::model($iSurveyId)->count($condition);
+        
         if ($limit>$aData->records)
         {
             $limit=$aData->records;
         }
-        $aData->total = ceil($aData->records / $limit);
+        if ($limit!=0)
+        {
+            $aData->total = ceil($aData->records / $limit);
+        }
+        else
+        {
+            $aData->total = 0;
+        }
 
         Yii::app()->loadHelper("surveytranslator");
 
         $format = getDateFormatData(Yii::app()->session['dateformat']);
 
-        for ($i = 0, $j = 0; $i < $limit && $j < $limit; $i++, $j++)
+        $aSurveyInfo = Survey::model()->findByPk($iSurveyId)->getAttributes(); //Get survey settings
+        $attributes  = getAttributeFieldNames($iSurveyId);
+        foreach ($tokens as $token)
         {
-            $token = $tokens[$j];
-            if ((int) $token['validfrom'])
+            $aRowToAdd = array();
+            if ((int) $token['validfrom']) {
                 $token['validfrom'] = date($format['phpdate'] . ' H:i', strtotime(trim($token['validfrom'])));
-            else
+            } else {
                 $token['validfrom'] = '';
-            if ((int) $token['validuntil'])
+            }
+            if ((int) $token['validuntil']) {
                 $token['validuntil'] = date($format['phpdate'] . ' H:i', strtotime(trim($token['validuntil'])));
-            else
+            } else {
                 $token['validuntil'] = '';
+            }
 
-            $aData->rows[$i]['id'] = $token['tid'];
-            $prow = Survey::model()->findByPk($iSurveyId)->getAttributes(); //Get survey settings
+            $aRowToAdd['id'] = $token['tid'];
 
             $action="";
-            if($token['token'] != "" && ($token['completed'] == "N" || $token['completed'] =="")) {
-                $action .= '<input type="image" style="float: left" src="' . Yii::app()->getConfig('adminimageurl') . 'do_16.png" title="' . $clang->gT("Do survey") . '" alt="' . $clang->gT("Do survey") . '" onclick=\'window.open("' . Yii::app()->getController()->createUrl("survey/index/sid/{$iSurveyId}/token/{$token['token']}") . '", "_blank")\'>';
-            } elseif ($token['completed'] != "N" && $token['completed'] != "" && $prow['anonymized'] == "N" ) {
+            if ($token['token'] != "" && ($token['completed'] == "N" || $token['completed'] == "")) {
+                $action .= viewHelper::getImageLink('do_16.png', "survey/index/sid/{$iSurveyId}/token/{$token['token']}/newtest/Y", $clang->gT("Do survey"), '_blank');
+            } elseif ($token['completed'] != "N" && $token['completed'] != "" && $aSurveyInfo['anonymized'] == "N") {
                 //Get the survey response id of the matching entry
-                $id=Survey_dynamic::model($iSurveyId)->findAllByAttributes(array('token'=>$token['token']));
-                if (count($id)>0)
-                {
-                    $action .= '<input type="image" style="float: left" src="' . Yii::app()->getConfig('adminimageurl') . 'token_viewanswer.png" title="' . $clang->gT("View response details"). '" alt="' . $clang->gT("View response details"). '" onClick=\'window.open("'. Yii::app()->getController()->createUrl("admin/responses/view/surveyid/{$iSurveyId}/id/{$id[0]['id']}").'", "_top")\'>';
+                $id = Survey_dynamic::model($iSurveyId)->findAllByAttributes(array('token' => $token['token']));
+                if (count($id) > 0) {
+                    $action .= viewHelper::getImageLink('token_viewanswer.png', "admin/responses/sa/view/surveyid/{$iSurveyId}/id/{$id[0]['id']}", $clang->gT("View response details"), null, '_top');
                 } else {
                     $action .= '<div style="width: 20px; height: 16px; float: left;"></div>';
                 }
             } else {
                 $action .= '<div style="width: 20px; height: 16px; float: left;"></div>';
             }
-            $action .= '<input type="image" style="float: left" src="' . Yii::app()->getConfig('adminimageurl') . 'token_delete.png" title="' . $clang->gT("Delete token entry") . '" alt="' . $clang->gT("Delete token entry") . '" onclick=\'if (confirm("' . $clang->gT("Are you sure you want to delete this entry?") . ' (' . $token['tid'] . ')")) {$("#displaytokens").delRowData(' . $token['tid'] . ');$.post(delUrl,{tid:' . $token['tid'] . '});}\'>';
-            if (strtolower($token['emailstatus']) == 'ok' || strtolower($token['emailstatus']) == 'open' || strtolower($token['emailstatus']) == 'click' || strtolower($token['emailstatus']) == 'send')
-            {
-                if($token['completed'] == 'N' && $token['usesleft'] > 0)
-                {
-                    if ($token['sent'] == 'N')
-                        $action .= '<input type="image" style="float: left" src="' . Yii::app()->getConfig('adminimageurl') . 'token_invite.png" name="sendinvitations" id="sendinvitations" title="' . $clang->gT("Send invitation email to this person (if they have not yet been sent an invitation email)") . '" onclick=\'window.open("' . Yii::app()->getController()->createUrl("admin/tokens/email/surveyid/{$iSurveyId}/tokenids/" . $token['tid']) . '")\' />';
-                    else
-                        $action .= '<input type="image" style="float: left" src="' . Yii::app()->getConfig('adminimageurl') . 'token_remind.png" name="sendreminders" id="sendreminders" title="' . $clang->gT("Send reminder email to this person (if they have already received the invitation email)") . '" onclick=\'window.open("' . Yii::app()->getController()->createUrl("admin/tokens/email/action/remind/surveyid/{$iSurveyId}/tokenids/" . $token['tid']) . '")\' />';
-                } else {
-                    $action .= '<div style="width: 20px; height: 16px; float: left;"></div>';
-                }
-            } else {
-                $action .= '<div style="width: 20px; height: 16px; float: left;"></div>';
-            }
-            $action .= '<input style="float: left; height: 16; width: 16px; font-size: 8; font-family: verdana" type="image" src="' . Yii::app()->getConfig('adminimageurl') . 'edit_16.png" class="token_edit" title="' . $clang->gT("Edit token entry") . '" alt="' . $clang->gT("Edit token entry") . '">';
-            if(!empty($token['participant_id']) && $token['participant_id'] != "") {
-                $action .= '<input type="image" style="float: left" src="'.Yii::app()->getConfig('adminimageurl').'cpdb_16.png" name="viewparticipant" id="viewparticipant" title="'.$clang->gT("View this person in the central participants database").'" alt="'.$clang->gT("View this person in the central participants database").'" onClick=\'window.open("'.Yii::app()->getController()->createUrl("admin/participants/displayParticipants/searchurl/participant_id||equal||".$token['participant_id']).'", "_top")\'>';
-            } else {
-                $action .= '<div style="width: 20px; height: 16px; float: left;"></div>';
-            }
-            // Format the email history
-            if(!empty($token['emailhistory'])){
-                $tmpHistory = '';
-                $timestamps = unserialize($token['emailhistory']);
-                foreach($timestamps as $timestamp => $histories){
-                    $date = date('d F Y H:i:s', intval($timestamp));
-                    foreach($histories as $history){
-                        $tmpHistory .= $date.' - '.$history['event'];
-                        if($history['event'] == 'click'){
-                            $tmpHistory .= ' - '.$history['msg']['clicks'][0]['url'];
-                        }
-                        $tmpHistory .= "\n";
+            $attribs = array('onclick' => 'if (confirm("' . $clang->gT("Are you sure you want to delete this entry?") . ' (' . $token['tid'] . ')")) {$("#displaytokens").delRowData(' . $token['tid'] . ');$.post(delUrl,{tid:' . $token['tid'] . '});}');
+            $action .= viewHelper::getImageLink('token_delete.png', null, $clang->gT("Delete token entry"), null, 'imagelink btnDelete', $attribs);
+            if (strtolower($token['emailstatus']) == 'ok') {
+                if ($token['completed'] == 'N' && $token['usesleft'] > 0) {
+                    if ($token['sent'] == 'N') {
+                        $action .= viewHelper::getImageLink('token_invite.png', "admin/tokens/sa/email/surveyid/{$iSurveyId}/tokenids/" . $token['tid'], $clang->gT("Send invitation email to this person (if they have not yet been sent an invitation email)"), "_blank");
+                    } else {
+                        $action .= viewHelper::getImageLink('token_remind.png', "admin/tokens/sa/email/action/remind/surveyid/{$iSurveyId}/tokenids/" . $token['tid'], $clang->gT("Send reminder email to this person (if they have already received the invitation email)"), "_blank");
                     }
-                }         
-                $emailhistory = '<img src="'.Yii::app()->getConfig('adminimageurl').'info.png" title="'.$tmpHistory.'" alt="'.$tmpHistory.'" />';
-            }else{
-                $emailhistory = '';
+                } else {
+                    $action .= '<div style="width: 20px; height: 16px; float: left;"></div>';
+                }
+            } else {
+                $action .= '<div style="width: 20px; height: 16px; float: left;"></div>';
             }
-            $aData->rows[$i]['cell'] = array($token['tid'], $action, $token['firstname'], $token['lastname'], $token['email'], $token['emailstatus'], $emailhistory , $token['token'], $token['language'], $token['sent'], $token['remindersent'], $token['remindercount'], $token['completed'], $token['usesleft'], $token['validfrom'], $token['validuntil']);
-            $attributes = getAttributeFieldNames($iSurveyId);
-            foreach ($attributes as $attribute)
-            {
-                $aData->rows[$i]['cell'][] = $token[$attribute];
-            }            
+            $action .= viewHelper::getImageLink('edit_16.png', null, $clang->gT("Edit token entry"), null, 'imagelink token_edit');
+            if(!empty($token['participant_id']) && $token['participant_id'] != "" && hasGlobalPermission('USER_RIGHT_PARTICIPANT_PANEL')) {
+                $action .= viewHelper::getImageLink('cpdb_16.png', "admin/participants/sa/displayParticipants/searchurl/participant_id||equal||" . $token['participant_id'], $clang->gT("View this person in the central participants database"), '_top');
+            } else {
+                $action .= '<div style="width: 20px; height: 16px; float: left;"></div>';
+            }
+            $aRowToAdd['cell'] = array($token['tid'], $action, $token['firstname'], $token['lastname'], $token['email'], $token['emailstatus'], $token['token'], $token['language'], $token['sent'], $token['remindersent'], $token['remindercount'], $token['completed'], $token['usesleft'], $token['validfrom'], $token['validuntil']);
+            foreach ($attributes as $attribute) {
+                $aRowToAdd['cell'][] = $token[$attribute];
+            }
+            $aData->rows[] = $aRowToAdd;
         }
 
         echo ls_json_encode($aData);
@@ -486,105 +490,12 @@ class tokens extends Survey_Common_Action
 
     function getSearch_json($iSurveyId)
     {
-        $clang = $this->getController()->lang;
-        // CHECK TO SEE IF A TOKEN TABLE EXISTS FOR THIS SURVEY
-        $bTokenExists = tableExists('{{tokens_' . $iSurveyId . '}}');
-        if (!$bTokenExists) //If no tokens table exists
-        {
-            self::_newtokentable($iSurveyId);
-        }
-        $prow = Survey::model()->findByPk($iSurveyId)->getAttributes(); //Get survey settings
-        $page = (Yii::app()->request->getPost('page') != "") ? Yii::app()->request->getPost('page') : 1;
-        $limit = (Yii::app()->request->getPost('rows') != "") ? Yii::app()->request->getPost('rows') : 25 ;
-        $fields = array('tid', 'firstname', 'lastname', 'email', 'emailstatus', 'token', 'language', 'sent', 'sentreminder', 'remindercount', 'completed', 'usesleft', 'validfrom', 'validuntil');
         $searchcondition = Yii::app()->request->getQuery('search');
         $searchcondition = urldecode($searchcondition);
         $finalcondition = array();
         $condition = explode("||", $searchcondition);
-        $aData = new stdClass();
-
-        $records = Tokens_dynamic::model($iSurveyId)->getSearchMultiple($condition, $page, $limit);
-        $aData->records = count(Tokens_dynamic::model($iSurveyId)->getSearchMultiple($condition, 0, 0));
-
-        $aData->page = $page;
-        $aData->total = ceil($aData->records / $limit);
-
-        $i = 0;
-        foreach ($records as $row => $value)
-        {
-            $action="";
-            if($value['token'] != "" && ($value['completed'] == "N" || $value['completed'] =="")) {
-                $action .= '<input type="image" style="float: left" src="' . Yii::app()->getConfig('adminimageurl') . 'do_16.png" title="' . $clang->gT("Do survey") . '" alt="' . $clang->gT("Do survey") . '" onclick=\'window.open("' . Yii::app()->getController()->createUrl("survey/index/sid/{$iSurveyId}/token/{$value['token']}") . '", "_blank")\'>';
-            } elseif ($value['completed'] != "N" && $value['completed'] != "" && $prow['anonymized'] == "N" ) {
-                //Get the survey response id of the matching entry
-                $id=Survey_dynamic::model($iSurveyId)->findAllByAttributes(array('token'=>$value['token']));
-                $action .= '<input type="image" style="float: left" src="' . Yii::app()->getConfig('adminimageurl') . 'token_viewanswer.png" title="' . $clang->gT("View response details"). '" alt="' . $clang->gT("View response details"). '" onClick=\'window.open("'. Yii::app()->getController()->createUrl("admin/responses/view/surveyid/{$iSurveyId}/id/{$id[0]['id']}").'", "_top")\'>';
-
-            } else {
-                $action .= '<div style="width: 20px; height: 16px; float: left;"></div>';
-            }
-            $action .= '<input type="image" style="float: left" src="' . Yii::app()->getConfig('adminimageurl') . 'token_delete.png" title="' . $clang->gT("Delete token entry") . '" alt="' . $clang->gT("Delete token entry") . '" onclick=\'if (confirm("' . $clang->gT("Are you sure you want to delete this entry?") . ' (' . $value['tid'] . ')")) {$("#displaytokens").delRowData(' . $value['tid'] . ');$.post(delUrl,{tid:' . $value['tid'] . '});}\'>';
-            if (strtolower($value['emailstatus']) == 'ok')
-            {
-            if($value['completed'] == 'N' && $value['usesleft'] > 0)
-                {
-                    if ($value['sent'] == 'N')
-                        $action .= '<input type="image" style="float: left" src="' . Yii::app()->getConfig('adminimageurl') . 'token_invite.png" name="sendinvitations" id="sendinvitations" title="' . $clang->gT("Send invitation email to this person (if they have not yet been sent an invitation email)") . '" onclick=\'window.open("' . Yii::app()->getController()->createUrl("admin/tokens/email/surveyid/{$iSurveyId}/tokenids/" . $value['tid']) . '", "_blank")\' />';
-                    else
-                        $action .= '<input type="image" style="float: left" src="' . Yii::app()->getConfig('adminimageurl') . 'token_remind.png" name="sendreminders" id="sendreminders" title="' . $clang->gT("Send reminder email to this person (if they have already received the invitation email)") . '" onclick=\'window.open("' . Yii::app()->getController()->createUrl("admin/tokens/email/action/remind/surveyid/{$iSurveyId}/tokenids/" . $value['tid']) . '", "_blank")\' />';
-                } else {
-                    $action .= '<div style="width: 20px; height: 16px; float: left;"></div>';
-                }
-            }
-            $action .= '<input style="float: left; height: 16; width: 16px; font-size: 8; font-family: verdana" type="image" src="' . Yii::app()->getConfig('adminimageurl') . 'edit_16.png" class="token_edit" title="' . $clang->gT("Edit token entry") . '" alt="' . $clang->gT("Edit token entry") . '">';
-            if(!empty($value['participant_id']) && $value['participant_id'] != "") {
-                $action .= '<input type="image" style="float: left" src="'.Yii::app()->getConfig('adminimageurl').'cpdb_16.png" name="viewparticipant" id="viewparticipant" title="'.$clang->gT("View this person in the central participants database").'" alt="'.$clang->gT("View this person in the central participants database").'" onClick=\'window.open("'.Yii::app()->getController()->createUrl("admin/participants/displayParticipants/searchurl/participant_id||equal||".$value['participant_id']).'", "_top")\'>';
-            } else {
-                $action .= '<div style="width: 20px; height: 16px; float: left;"></div>';
-            }
-
-            $sortablearray[$i] = array($value['tid'], $action, $value['firstname'], $value['lastname'], $value['email'], $value['emailstatus'], $value['token'], $value['language'], $value['sent'], $value['remindersent'], $value['remindercount'], $value['completed'], $value['usesleft'], $value['validfrom'], $value['validuntil']);
-            $i++;
-        }
-        function subval_sort($a, $subkey, $order)
-        {
-            foreach ($a as $k => $v)
-            {
-                $b[$k] = strtolower($v[$subkey]);
-            }
-            if ($order == "asc")
-            {
-                asort($b, SORT_REGULAR);
-            }
-            else
-            {
-                arsort($b, SORT_REGULAR);
-            }
-            foreach ($b as $key => $val)
-            {
-                $c[] = $a[$key];
-            }
-            return $c;
-        }
-
-        if (!empty($sortablearray))
-        {
-            $indexsort = array_search(Yii::app()->request->getPost('sidx'), $fields);
-            $sortedarray = subval_sort($sortablearray, $indexsort, Yii::app()->request->getPost('sord'));
-            $i = 0;
-            $count = count($sortedarray[0]);
-            foreach ($sortedarray as $key => $value)
-            {
-                $aData->rows[$i]['id'] = $value[0];
-                $aData->rows[$i]['cell'] = array();
-                for ($j = 0; $j < $count; $j++)
-                {
-                    array_push($aData->rows[$i]['cell'], $value[$j]);
-                }
-                $i++;
-            }
-        }
-        echo ls_json_encode($aData);
+        
+        return $this->getTokens_json($iSurveyId, $condition);
     }
 
     function editToken($iSurveyId)
@@ -898,7 +809,7 @@ class tokens extends Survey_Common_Action
                 $this->_renderWrappedTemplate('token', array('tokenbar', 'message' => array(
                 'title' => $clang->gT("Success"),
                 'message' => $clang->gT("The token entry was successfully updated.") . "<br /><br />\n"
-                . "\t\t<input type='button' value='" . $clang->gT("Display tokens") . "' onclick=\"window.open('" . $this->getController()->createUrl("admin/tokens/browse/surveyid/$iSurveyId/") . "', '_top')\" />\n"
+                . "\t\t<input type='button' value='" . $clang->gT("Display tokens") . "' onclick=\"window.open('" . $this->getController()->createUrl("admin/tokens/sa/browse/surveyid/$iSurveyId/") . "', '_top')\" />\n"
                 )), $aData);
             }
             else
@@ -906,7 +817,7 @@ class tokens extends Survey_Common_Action
                 $this->_renderWrappedTemplate('token', array('tokenbar', 'message' => array(
                 'title' => $clang->gT("Failed"),
                 'message' => $clang->gT("There is already an entry with that exact token in the table. The same token cannot be used in multiple entries.") . "<br /><br />\n"
-                . "\t\t<input type='button' value='" . $clang->gT("Show this token entry") . "' onclick=\"window.open('" . $this->getController()->createUrl("admin/tokens/edit/surveyid/$iSurveyId/tokenid/$iTokenId") . "', '_top')\" />\n"
+                . "\t\t<input type='button' value='" . $clang->gT("Show this token entry") . "' onclick=\"window.open('" . $this->getController()->createUrl("admin/tokens/sa/edit/surveyid/$iSurveyId/tokenid/$iTokenId") . "', '_top')\" />\n"
                 )));
             }
         }
@@ -1069,7 +980,7 @@ class tokens extends Survey_Common_Action
                 $aData['success'] = false;
                 $message=array('title' => $clang->gT("Success"),
                 'message' => $clang->gT("New dummy tokens were added.") . "<br /><br />\n<input type='button' value='"
-                . $clang->gT("Display tokens") . "' onclick=\"window.open('" . $this->getController()->createUrl("admin/tokens/browse/surveyid/$iSurveyId") . "', '_top')\" />\n"
+                . $clang->gT("Display tokens") . "' onclick=\"window.open('" . $this->getController()->createUrl("admin/tokens/sa/browse/surveyid/$iSurveyId") . "', '_top')\" />\n"
                 );
             }
             else
@@ -1080,7 +991,7 @@ class tokens extends Survey_Common_Action
                 'message' => "<p>".sprintf($clang->gT("Only %s new dummy tokens were added after %s trials."),$newDummyToken,$invalidtokencount)
                 .$clang->gT("Try with a bigger token length.")."</p>"
                 ."\n<input type='button' value='"
-                . $clang->gT("Display tokens") . "' onclick=\"window.open('" . $this->getController()->createUrl("admin/tokens/browse/surveyid/$iSurveyId") . "', '_top')\" />\n"
+                . $clang->gT("Display tokens") . "' onclick=\"window.open('" . $this->getController()->createUrl("admin/tokens/sa/browse/surveyid/$iSurveyId") . "', '_top')\" />\n"
                 );
             }
             $this->_renderWrappedTemplate('token',  array('tokenbar','message' => $message),$aData);
@@ -1182,7 +1093,7 @@ class tokens extends Survey_Common_Action
         LimeExpressionManager::SetDirtyFlag();  // so that knows that token tables have changed
 
         Yii::app()->session['flashmessage'] = sprintf($clang->gT("%s field(s) were successfully added."), $number2add);
-        Yii::app()->getController()->redirect(Yii::app()->getController()->createUrl("/admin/tokens/managetokenattributes/surveyid/$iSurveyId"));
+        Yii::app()->getController()->redirect(Yii::app()->getController()->createUrl("/admin/tokens/sa/managetokenattributes/surveyid/$iSurveyId"));
 
     }
 
@@ -1231,7 +1142,7 @@ class tokens extends Survey_Common_Action
         $aData['surveyid'] = $iSurveyId;
         $this->_renderWrappedTemplate('token', array('tokenbar', 'message' => array(
         'title' => $clang->gT('Token attribute descriptions were successfully updated.'),
-        'message' => "<br /><input type='button' value='" . $clang->gT('Back to attribute field management.') . "' onclick=\"window.open('" . $this->getController()->createUrl("/admin/tokens/managetokenattributes/surveyid/$iSurveyId") . "', '_top')\" />"
+        'message' => "<br /><input type='button' value='" . $clang->gT('Back to attribute field management.') . "' onclick=\"window.open('" . $this->getController()->createUrl("/admin/tokens/sa/managetokenattributes/surveyid/$iSurveyId") . "', '_top')\" />"
         )), $aData);
     }
 
@@ -1301,7 +1212,7 @@ class tokens extends Survey_Common_Action
         $aData['bEmail'] = $bEmail;
         $aData['aSurveyLangs'] = $aData['surveylangs'] = $aSurveyLangs;
         $aData['baselang'] = $sBaseLanguage;
-        $aData['tokenfields'] = $aTokenFields;
+        $aData['tokenfields'] = array_keys($aTokenFields);
         $aData['nrofattributes'] = $iAttributes;
         $aData['examplerow'] = $aExampleRow;
         $aData['tokenids'] = $aTokenIds;
@@ -1371,7 +1282,7 @@ class tokens extends Survey_Common_Action
                     $_POST['message_' . $language] = html_entity_decode(Yii::app()->request->getPost('message_' . $language), ENT_QUOTES, Yii::app()->getConfig("emailcharset"));
             }
 
-            $attributes = getTokenFieldsAndNames($iSurveyId);
+            $attributes = array_keys(getTokenFieldsAndNames($iSurveyId));
             $tokenoutput = "";
 
             if ($emcount > 0)
@@ -1390,7 +1301,7 @@ class tokens extends Survey_Common_Action
                     $fieldsarray["{TOKEN}"] = $emrow['token'];
                     $fieldsarray["{LANGUAGE}"] = $emrow['language'];
 
-                    foreach ($attributes as $attributefield => $attributedescription)
+                    foreach ($attributes as $attributefield)
                     {
                         $fieldsarray['{' . strtoupper($attributefield) . '}'] = $emrow[$attributefield];
                         $fieldsarray['{TOKEN:'.strtoupper($attributefield).'}']=$emrow[$attributefield];
@@ -1464,7 +1375,7 @@ class tokens extends Survey_Common_Action
                             //Update central participant survey_links
                             if(!empty($emrow['participant_id']))
                             {
-                                $slquery = Survey_links::model()->find('participant_id = "'.$emrow['participant_id'].'" AND survey_id = '.$iSurveyId.' AND token_id = '.$emrow['tid']);
+                                $slquery = Survey_links::model()->find('participant_id = :pid AND survey_id = :sid AND token_id = :tid',array(':pid'=>$emrow['participant_id'],':sid'=>$iSurveyId,':tid'=>$emrow['tid']));
                                 $slquery->date_invited = dateShift(date("Y-m-d H:i:s"), "Y-m-d H:i", Yii::app()->getConfig("timeadjust"));
                                 $slquery->save();
                             }
@@ -1541,7 +1452,7 @@ class tokens extends Survey_Common_Action
         }
         else
         {
-            $aData['resultr'] = Tokens_dynamic::model($iSurveyId)->find(array('select' => 'language', 'group' => 'language'));
+            $aData['resultr'] = Tokens_dynamic::model($iSurveyId)->findAll(array('select' => 'language', 'group' => 'language'));
             $aData['thissurvey'] = getSurveyInfo($iSurveyId);
             $aData['surveyid'] = $iSurveyId;
 
@@ -2151,9 +2062,9 @@ class tokens extends Survey_Common_Action
             'title' => $clang->gT("Create tokens"),
             'message' => $clang->gT("Clicking 'Yes' will generate tokens for all those in this token list that have not been issued one. Continue?") . "<br /><br />\n"
             . "<input type='submit' value='"
-            . $clang->gT("Yes") . "' onclick=\"" . convertGETtoPOST($this->getController()->createUrl("admin/tokens/tokenify/surveyid/$iSurveyId") . "?ok=Y") . "\" />\n"
+            . $clang->gT("Yes") . "' onclick=\"" . convertGETtoPOST($this->getController()->createUrl("admin/tokens/sa/tokenify/surveyid/$iSurveyId") . "?ok=Y") . "\" />\n"
             . "<input type='submit' value='"
-            . $clang->gT("No") . "' onclick=\"window.open('" . $this->getController()->createUrl("admin/tokens/index/surveyid/$iSurveyId") . "', '_top')\" />\n"
+            . $clang->gT("No") . "' onclick=\"window.open('" . $this->getController()->createUrl("admin/tokens/sa/index/surveyid/$iSurveyId") . "', '_top')\" />\n"
             . "<br />\n"
             )), $aData);
         }
@@ -2205,24 +2116,24 @@ class tokens extends Survey_Common_Action
         $date = date('YmdHis');
         /* If there is not a $_POST value of 'ok', then ask if the user is sure they want to
            delete the tokens table */
-        if (!Yii::app()->request->getPost('ok'))
+        $oldtable = "tokens_$iSurveyId";
+        $newtable = "old_tokens_{$iSurveyId}_$date";
+        $newtableDisplay =  Yii::app()->db->tablePrefix . $newtable;
+        if (!Yii::app()->request->getQuery('ok'))
         {
             $this->_renderWrappedTemplate('token', array('tokenbar', 'message' => array(
             'title' => $clang->gT("Delete Tokens Table"),
             'message' => $clang->gT("If you delete this table tokens will no longer be required to access this survey.") . "<br />" . $clang->gT("A backup of this table will be made if you proceed. Your system administrator will be able to access this table.") . "<br />\n"
-            . "( \"old_tokens_{$iSurveyId}_$date\" )<br /><br />\n"
+            . sprintf('("%s")<br /><br />', $newtableDisplay)
             . "<input type='submit' value='"
-            . $clang->gT("Delete Tokens") . "' onclick=\"" . convertGETtoPOST($this->getController()->createUrl("admin/tokens/kill/surveyid/$iSurveyId") . "?ok=y") . "\" />\n"
+            . $clang->gT("Delete Tokens") . "' onclick=\"window.open('" . $this->getController()->createUrl("admin/tokens/sa/kill/surveyid/{$iSurveyId}/ok/Y") . "', '_top')\" />\n"
             . "<input type='submit' value='"
-            . $clang->gT("Cancel") . "' onclick=\"window.open('" . $this->getController()->createUrl("admin/tokens/index/surveyid/$iSurveyId") . "', '_top')\" />\n"
+            . $clang->gT("Cancel") . "' onclick=\"window.open('" . $this->getController()->createUrl("admin/tokens/sa/index/surveyid/{$iSurveyId}") . "', '_top')\" />\n"
             )), $aData);
         }
         else
         /* The user has confirmed they want to delete the tokens table */
         {
-            $oldtable = "tokens_$iSurveyId";
-            $newtable = "old_tokens_{$iSurveyId}_$date";
-
             Yii::app()->db->createCommand()->renameTable("{{{$oldtable}}}", "{{{$newtable}}}");
             Survey::model()->updateByPk($iSurveyId, array('attributedescriptions' => "a:0:{}"));
 
@@ -2232,9 +2143,9 @@ class tokens extends Survey_Common_Action
             $this->_renderWrappedTemplate('token', array('tokenbar', 'message' => array(
             'title' => $clang->gT("Delete Tokens Table"),
             'message' => '<br />' . $clang->gT("The tokens table has now been removed and tokens are no longer required to access this survey.") . "<br /> " . $clang->gT("A backup of this table has been made and can be accessed by your system administrator.") . "<br />\n"
-            . "(\"old_tokens_{$iSurveyId}_$date\")" . "<br /><br />\n"
+            . sprintf('("%s")<br /><br />', $newtableDisplay)
             . "<input type='submit' value='"
-            . $clang->gT("Main Admin Screen") . "' onclick=\"window.open('" . Yii::app()->getController()->createUrl("admin/survey/view/surveyid/".$iSurveyId) . "', '_top')\" />"
+            . $clang->gT("Main Admin Screen") . "' onclick=\"window.open('" . Yii::app()->getController()->createUrl("admin/survey/sa/view/surveyid/".$iSurveyId) . "', '_top')\" />"
             )), $aData);
 
             LimeExpressionManager::SetDirtyFlag();  // so that knows that token tables have changed
@@ -2348,14 +2259,14 @@ class tokens extends Survey_Common_Action
     {
         $clang = $this->getController()->lang;
         Yii::import('application.helpers.admin.token_helper', true);
-        if (Yii::app()->request->getPost('createtable') == "Y" && hasSurveyPermission($iSurveyId, 'surveyactivation', 'update'))
+        if (Yii::app()->request->getQuery('createtable') == "Y" && hasSurveyPermission($iSurveyId, 'surveyactivation', 'update'))
         {
             createTokenTable($iSurveyId);
             $this->_renderWrappedTemplate('token', array('message' =>array(
             'title' => $clang->gT("Token control"),
             'message' => $clang->gT("A token table has been created for this survey.") . " (\"" . Yii::app()->db->tablePrefix . "tokens_$iSurveyId\")<br /><br />\n"
             . "<input type='submit' value='"
-            . $clang->gT("Continue") . "' onclick=\"window.open('" . $this->getController()->createUrl("admin/tokens/index/surveyid/$iSurveyId") . "', '_top')\" />\n"
+            . $clang->gT("Continue") . "' onclick=\"window.open('" . $this->getController()->createUrl("admin/tokens/sa/index/surveyid/$iSurveyId") . "', '_top')\" />\n"
             )));
         }
         /* Restore a previously deleted tokens table */
@@ -2383,6 +2294,8 @@ class tokens extends Survey_Common_Action
 
 
             Yii::app()->db->createCommand()->renameTable(Yii::app()->request->getPost('oldtable'), Yii::app()->db->tablePrefix."tokens_".intval($iSurveyId));
+            //Check that the tokens table has the required fields
+            Tokens_dynamic::model($iSurveyId)->checkColumns();
 
             //Add any survey_links from the renamed table
             Survey_links::model()->rebuildLinksFromTokenTable($iSurveyId);
@@ -2391,7 +2304,7 @@ class tokens extends Survey_Common_Action
             'title' => $clang->gT("Import old tokens"),
             'message' => $clang->gT("A token table has been created for this survey and the old tokens were imported.") . " (\"" . Yii::app()->db->tablePrefix . "tokens_$iSurveyId" . "\")<br /><br />\n"
             . "<input type='submit' value='"
-            . $clang->gT("Continue") . "' onclick=\"window.open('" . $this->getController()->createUrl("admin/tokens/index/surveyid/$iSurveyId") . "', '_top')\" />\n"
+            . $clang->gT("Continue") . "' onclick=\"window.open('" . $this->getController()->createUrl("admin/tokens/sa/index/surveyid/$iSurveyId") . "', '_top')\" />\n"
             )));
 
             LimeExpressionManager::SetDirtyFlag();  // so that knows that token tables have changed

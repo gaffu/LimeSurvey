@@ -29,6 +29,13 @@ class Assessment extends CActiveRecord
 		return parent::model($class);
 	}
 
+    public function rules()
+    {
+        return array(
+            array('name,message','LSYii_Validators'),
+        );
+    }
+
 	/**
 	 * Returns the setting's table name to be used by the model
 	 *

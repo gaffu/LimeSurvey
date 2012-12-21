@@ -13,7 +13,15 @@ if ( !defined('BASEPATH')) exit('No direct script access allowed');
 *
 *	$Id$
 */
-function dbExecuteAssoc($sql,$inputarr=false,$silent=false)
+
+/**
+ * 
+ * @param type $sql
+ * @param type $inputarr
+ * @param type $silent
+ * @return CDbDataReader
+ */
+function dbExecuteAssoc($sql,$inputarr=false,$silent=true)
 {
     $error = '';
     try {
@@ -31,7 +39,7 @@ function dbExecuteAssoc($sql,$inputarr=false,$silent=false)
         $dataset=false;
     }
 
-    if (!$silent && !$dataset)
+    if (!$dataset && (Yii::app()->getConfig('debug') >0 || !$silent))
     {
         safeDie('Error executing query in dbExecuteAssoc:'.$error);
     }
@@ -185,9 +193,9 @@ function dbGetTablesLike($table)
 *
 * @param mixed $sTableName
 * @param mixed $aColumns
-* @param mixed $aOptions
+* @param mixed $sOptions
 */
-function createTable($sTableName, $aColumns, $aOptions=null)
+function createTable($sTableName, $aColumns, $sOptions=null)
 {
     $sDBDriverName=Yii::app()->db->getDriverName();
 
@@ -206,5 +214,10 @@ function createTable($sTableName, $aColumns, $aOptions=null)
             $sType=str_replace('varchar','character varying',$sType);
         }
     }
-    Yii::app()->db->createCommand()->createTable($sTableName,$aColumns,$aOptions);
+    if (Yii::app()->db->driverName == 'mysql' || Yii::app()->db->driverName == 'mysqli')
+    {
+        if (is_null($sOptions))
+        $sOptions='ENGINE=MyISAM';
+    }    
+    Yii::app()->db->createCommand()->createTable($sTableName,$aColumns,$sOptions);
 }

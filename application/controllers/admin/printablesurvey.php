@@ -70,28 +70,34 @@ class printablesurvey extends Survey_Common_Action
         $surveyactive = $desrow['active'];
         $surveytable = "{{survey_".$desrow['sid']."}}";
         $surveyexpirydate = $desrow['expires'];
-        $surveystartdate = $desrow['startdate'];
         $surveyfaxto = $desrow['faxto'];
         $dateformattype = $desrow['surveyls_dateformat'];
 
-
         if(isset($_POST['printableexport'])){$pdf->titleintopdf($surveyname,$surveydesc);}
 
-
         Yii::app()->loadHelper('surveytranslator');
-        $dformat=getDateFormatData($dateformattype);
-        $dformat=$dformat['phpdate'];
-
-        $expirytimestamp = strtotime($surveyexpirydate);
-        $expirytimeofday_h = date('H',$expirytimestamp);
-        $expirytimeofday_m = date('i',$expirytimestamp);
-
-        $surveyexpirydate = date($dformat,$expirytimestamp);
-
-        if(!empty($expirytimeofday_h) || !empty($expirytimeofday_m))
+        
+        if (!is_null($surveyexpirydate))
         {
-            $surveyexpirydate .= ' &ndash; '.$expirytimeofday_h.':'.$expirytimeofday_m;
-        };
+            $dformat=getDateFormatData($dateformattype);
+            $dformat=$dformat['phpdate'];
+
+            $expirytimestamp = strtotime($surveyexpirydate);
+            $expirytimeofday_h = date('H',$expirytimestamp);
+            $expirytimeofday_m = date('i',$expirytimestamp);
+
+            $surveyexpirydate = date($dformat,$expirytimestamp);
+
+            if(!empty($expirytimeofday_h) || !empty($expirytimeofday_m))
+            {
+                $surveyexpirydate .= ' &ndash; '.$expirytimeofday_h.':'.$expirytimeofday_m;
+            };            
+            sprintf($clang->gT("Please submit by %s"), $surveyexpirydate);
+        }
+        else
+        {
+            $surveyexpirydate='';
+        }
 
         //define('PRINT_TEMPLATE' , '/templates/print/' , true);
         if(is_file(Yii::app()->getConfig('usertemplaterootdir').DIRECTORY_SEPARATOR.$template.DIRECTORY_SEPARATOR.'print_survey.pstpl'))
@@ -156,12 +162,6 @@ class printablesurvey extends Survey_Common_Action
         if(!empty($surveyfaxto) && $surveyfaxto != '000-00000000') //If no fax number exists, don't display faxing information!
         {
             $survey_output['FAX_TO'] = $clang->gT("Please fax your completed survey to:")." $surveyfaxto";
-        }
-
-
-        if ($surveystartdate!='')
-        {
-            $survey_output['SUBMIT_BY'] = sprintf($clang->gT("Please submit by %s"), $surveyexpirydate);
         }
 
         /**
@@ -654,7 +654,12 @@ class printablesurvey extends Survey_Common_Action
                     {
                         $question['QUESTION_MANDATORY'] = $clang->gT('*');
                         $question['QUESTION_CLASS'] .= ' mandatory';
-                        $pdfoutput .= $clang->gT("*");
+                        //$pdfoutput .= $clang->gT("*"); 
+                        /*
+                         * mdekker 20121116: 
+                         * commented out since sometimes it is array instead of string and is reset to empty in the next
+                         * line anyway
+                         */
                     }
 
                     $pdfoutput ='';
@@ -1331,17 +1336,17 @@ class printablesurvey extends Survey_Common_Action
                                     $question['ANSWER'] .= "\t\t\t<td>\n";
                                     if ($checkboxlayout === false)
                                     {
-                                        $question['ANSWER'] .= "\t\t\t\t".self::_input_type_image('text','',4).self::_addsgqacode(" (".$fieldname.$mearow['title']."_".$xaxisarray[$i].") ")."\n";
+                                        $question['ANSWER'] .= "\t\t\t\t".self::_input_type_image('text','',4).self::_addsgqacode(" (".$fieldname.$frow['title']."_".$xaxisarray[$i].") ")."\n";
                                         $pdfoutput[$a][$i]="__";
                                     }
                                     else
                                     {
-                                        $question['ANSWER'] .= "\t\t\t\t".self::_input_type_image('checkbox').self::_addsgqacode(" (".$fieldname.$mearow['title']."_".$xaxisarray[$i].") ")."\n";
+                                        $question['ANSWER'] .= "\t\t\t\t".self::_input_type_image('checkbox').self::_addsgqacode(" (".$fieldname.$frow['title']."_".$xaxisarray[$i].") ")."\n";
                                         $pdfoutput[$a][$i]="o";
                                     }
                                     $question['ANSWER'] .= "\t\t\t</td>\n";
                                 }
-                                $answertext=$mearow['question'];
+                                $answertext=$frow['question'];
                                 if (strpos($answertext,'|'))
                                 {
                                     $answertext=substr($answertext,strpos($answertext,'|')+1);

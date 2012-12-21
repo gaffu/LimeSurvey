@@ -5,7 +5,8 @@
     ?>
 </div>
 <div class='wrap2columns'>
-    <form id='resultexport' action='<?php echo $this->createUrl("admin/export/exportresults/surveyid/$surveyid");?>' method='post'><div class='left'>
+    <?php echo CHtml::form(array('admin/export/sa/exportresults/surveyid/'.$surveyid), 'post', array('id'=>'resultexport'));?>
+        <div class='left'>
 
             
             <fieldset <?php  if ($SingleResponse) {?>
@@ -129,7 +130,7 @@
                         <?php $attrfieldnames=getTokenFieldsAndNames($surveyid,true);
                             foreach ($attrfieldnames as $attr_name=>$attr_desc)
                             {
-                                echo "<option value='$attr_name' id='$attr_name' />".$attr_desc."</option>\n";
+                                echo "<option value='$attr_name' id='$attr_name' />".$attr_desc['description']."</option>\n";
                         } ?>
                     </select></fieldset>
                 <?php } ?>

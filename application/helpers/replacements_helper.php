@@ -29,7 +29,7 @@ function templatereplace($line, $replacements = array(), &$redata = array(), $de
 {
     /*
     global $clienttoken,$token,$sitename,$move,$showxquestions,$showqnumcode,$questioncode;
-    global $s_lang,$errormsg,$saved_id, $relativeurl, $languagechanger,$captchapath,$loadname;
+    global $s_lang,$errormsg,$saved_id, $languagechanger,$captchapath,$loadname;
     */
     /*
     $allowedvars = array('surveylist', 'sitename', 'clienttoken', 'rooturl', 'thissurvey', 'imageurl', 'defaulttemplate',
@@ -37,7 +37,7 @@ function templatereplace($line, $replacements = array(), &$redata = array(), $de
     'showgroupinfo', 'showqnumcode', 'questioncode', 'answer', 'navigator', 'help', 'totalquestions',
     'surveyformat', 'completed', 'notanswered', 'privacy', 'surveyid', 'publicurl',
     'templatedir', 'token', 'assessments', 's_lang', 'errormsg', 'clang', 'saved_id', 'usertemplaterootdir',
-    'relativeurl', 'languagechanger', 'printoutput', 'captchapath', 'loadname');
+    'languagechanger', 'printoutput', 'captchapath', 'loadname');
     */
     $allowedvars = array(
     'answer',
@@ -57,7 +57,6 @@ function templatereplace($line, $replacements = array(), &$redata = array(), $de
     'percentcomplete',
     'privacy',
     'question',
-    'relativeurl',
     's_lang',
     'saved_id',
     'showgroupinfo',
@@ -96,12 +95,19 @@ function templatereplace($line, $replacements = array(), &$redata = array(), $de
     if (!isset($showxquestions)) { $showxquestions = Yii::app()->getConfig('showxquestions'); }
     if (!isset($s_lang)) { $s_lang = (isset(Yii::app()->session['survey_'.$_surveyid]['s_lang']) ? Yii::app()->session['survey_'.$_surveyid]['s_lang'] : 'en'); }
     if (!isset($captchapath)) { $captchapath = ''; }
-
+    if (!isset($sitename)) { $sitename=Yii::app()->getConfig('sitename'); }
+    if (!isset($saved_id) && isset(Yii::app()->session['survey_'.$_surveyid]['srid'])) { $saved_id=Yii::app()->session['survey_'.$_surveyid]['srid'];}
     $clang = Yii::app()->lang;
 
     Yii::app()->loadHelper('surveytranslator');
     $questiondetails = array('sid' => 0, 'gid' => 0, 'qid' => 0, 'aid' =>0);
-    if(isset($question) && isset($question['sgq'])) $questiondetails=getSIDGIDQIDAIDType($question['sgq']); //Gets an array containing SID, GID, QID, AID and Question Type)
+    if(isset($question) && isset($question['sgq'])) {
+        $searchCode = $question['sgq'];
+        if (isset($question['aid']) && $question['aid']) { // See BUG #6947 and #6954
+            $searchCode .= $question['aid'];
+        }
+        $questiondetails=getSIDGIDQIDAIDType($searchCode); //Gets an array containing SID, GID, QID and Question Type)
+    }
 
     if (isset($thissurvey['sid'])) {
         $surveyid = $thissurvey['sid'];
@@ -118,7 +124,9 @@ function templatereplace($line, $replacements = array(), &$redata = array(), $de
     }
     if(!isset($templatedir)) $templatedir = getTemplatePath($templatename);
     if(!isset($templateurl)) $templateurl = getTemplateURL($templatename)."/";
-
+    if (!$anonymized && isset($thissurvey['anonymized'])) {
+        $anonymized=($thissurvey['anonymized']=="Y");
+    }
     // TEMPLATECSS and TEMPLATEJS
     $_templatecss="";$_templatejs="";
     if(stripos ($line,"{TEMPLATECSS}"))
@@ -454,7 +462,7 @@ function templatereplace($line, $replacements = array(), &$redata = array(), $de
                 $_saveall = '';
             }
         }
-        elseif (isset(Yii::app()->session['scid']) && (isset($move) && $move == "movelast"))
+        elseif (isset($surveyid) && isset($_SESSION['survey_'.$surveyid]['scid']) && (isset($move) && $move == "movelast"))
         {  //Already saved and on Submit Page, dont show Save So Far button
             $_saveall = '';
         }
@@ -606,7 +614,7 @@ function templatereplace($line, $replacements = array(), &$redata = array(), $de
         else
             $tokensid = $registerdata['sid'];
 
-        $_registerform = "<form method='post' action='".Yii::app()->getController()->createUrl('/register/index/surveyid/'.$tokensid)."'>\n";
+        $_registerform = CHtml::form(array("/register/index/surveyid/{$tokensid}"), 'post');
 
         if (!isset($_REQUEST['lang']))
         {
@@ -617,7 +625,7 @@ function templatereplace($line, $replacements = array(), &$redata = array(), $de
             $_reglang = returnGlobal('lang');
         }
 
-        $_registerform .= "<input type='hidden' name='lang' value='" . $_reglang . "' />\n";
+        $_registerform .= "\n<input type='hidden' name='lang' value='" . $_reglang . "' />\n";
         $_registerform .= "<input type='hidden' name='sid' value='$tokensid' id='sid' />\n";
 
         $_registerform.="<table class='register' summary='Registrationform'>\n"
@@ -806,7 +814,7 @@ EOD;
     $coreReplacements['PERCENTCOMPLETE'] = isset($percentcomplete) ? $percentcomplete : '';    // global
     $coreReplacements['PRIVACY'] = isset($privacy) ? $privacy : '';    // global
     $coreReplacements['PRIVACYMESSAGE'] = "<span style='font-weight:bold; font-style: italic;'>".$clang->gT("A Note On Privacy")."</span><br />".$clang->gT("This survey is anonymous.")."<br />".$clang->gT("The record kept of your survey responses does not contain any identifying information about you unless a specific question in the survey has asked for this. If you have responded to a survey that used an identifying token to allow you to access the survey, you can rest assured that the identifying token is not kept with your responses. It is managed in a separate database, and will only be updated to indicate that you have (or haven't) completed this survey. There is no way of matching identification tokens with survey responses in this survey.");
-    $coreReplacements['QID'] = isset($questiondetails['qid']) ? $questiondetails['qid'] : '';
+    $coreReplacements['QID'] = isset($questiondetails['qid']) ? $questiondetails['qid'] : '';// $questiondetails['qid'] or $questionNum, see bug #06954
     $coreReplacements['QUESTION'] = $_question;
     $coreReplacements['QUESTIONHELP'] = $_questionhelp;
     $coreReplacements['QUESTIONHELPPLAINTEXT'] = strip_tags(addslashes($help)); // global
@@ -853,7 +861,7 @@ EOD;
     $coreReplacements['TEMPLATEJS'] = $_templatejs;
     $coreReplacements['TEMPLATEURL'] = $templateurl;
     $coreReplacements['THEREAREXQUESTIONS'] = $_therearexquestions;
-    if (!$anonymized) $coreReplacements['TOKEN'] = $_token;
+    $coreReplacements['TOKEN'] = (!$anonymized ? $_token : '');// Silently replace TOKEN by empty string
     $coreReplacements['URL'] = $_linkreplace;
     $coreReplacements['WELCOME'] = (isset($thissurvey['welcome']) ? $thissurvey['welcome'] : '');
 

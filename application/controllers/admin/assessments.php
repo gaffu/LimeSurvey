@@ -109,7 +109,7 @@ class Assessments extends Survey_Common_Action
 
         Yii::app()->loadHelper('admin/htmleditor');
         if ($surveyinfo['assessments']!='Y')
-            $urls['message'] = array('title' => $clang->gT("Assessments mode not activated"), 'message' => sprintf($clang->gT("Assessment mode for this survey is not activated. You can activate it in the %s survey settings %s (tab 'Notification & data management')."),'<a href="'.$this->getController()->createUrl('/admin/survey/editsurveysettings/surveyid/'.$iSurveyID).'">','</a>'), 'class'=> 'warningheader');
+            $urls['message'] = array('title' => $clang->gT("Assessments mode not activated"), 'message' => sprintf($clang->gT("Assessment mode for this survey is not activated. You can activate it in the %s survey settings %s (tab 'Notification & data management')."),'<a href="'.$this->getController()->createUrl('admin/survey/sa/editsurveysettings/surveyid/'.$iSurveyID).'">','</a>'), 'class'=> 'warningheader');
         $urls['assessments_view'][]= $aData;
         $this->_renderWrappedTemplate('', $urls, $aData);
     }
@@ -196,11 +196,6 @@ class Assessments extends Survey_Common_Action
     {
         if (!isset($_POST['gid']))
             $_POST['gid'] = 0;
-
-        if (Yii::app()->getConfig('filterxsshtml')) {
-            $_POST['name_' . $language] = htmlspecialchars($_POST['name_' . $language]);
-            $_POST['assessmentmessage_' . $language] = htmlspecialchars($_POST['assessmentmessage_' . $language]);
-        }
 
         return array(
             'sid' => $iSurveyID,

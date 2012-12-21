@@ -14,7 +14,7 @@
         ?>
     </ul>
 
-    <form method='post' id='mainform' action='<?php echo $this->createUrl('admin/labels/process') ?>'>
+    <?php echo CHtml::form(array("admin/labels/sa/process"), 'post', array('id'=>'mainform')); ?>
         <input type='hidden' name='lid' value='<?php echo $lid ?>' />
         <input type='hidden' name='action' value='modlabelsetanswers' />
         <?php
@@ -53,7 +53,7 @@
                                     $codeids = $codeids . ' ' . $row['sortorder'];
                                 }
                             ?>
-                            <tr style='white-space: nowrap;' id='row<?php echo $row['sortorder'] ?>'<?php
+                            <tr style='white-space: nowrap;' id='row_<?php echo $row['language']; ?>_<?php echo $row['sortorder'] ?>'<?php
                                     if ($alternate == true) {
                                     ?> class="highlight" <?php
                                     }
@@ -86,17 +86,17 @@
                                         echo getEditor("editlabel", "title_{$row['language']}_{$row['sortorder']}", "[" . $clang->gT("Label:", "js") . "](" . $row['language'] . ")", '', '', '', $action);
                                     ?>
                                 </td>
+                                <td style='text-align:center;'>
                                 <?php
                                     if ($first)
                                     {
                                     ?>
-                                    <td style='text-align:center;'>
                                         <img src='<?php echo $sImageURL; ?>addanswer.png' class='btnaddanswer' alt='<?php $clang->eT("Insert a new label after this one") ?>' />
                                         <img src='<?php echo $sImageURL; ?>deleteanswer.png' class='btndelanswer' alt='<?php $clang->eT("Delete this label") ?>' />
-                                    </td>
                                     <?php
                                     }
                                 ?>
+                                    </td>
                             </tr>
                             <?php
                                 $position++;
@@ -105,7 +105,7 @@
                         ?>
                     </tbody>
                 </table>
-                <button class='btnquickadd' id='btnquickadd' type='button'><?php $clang->eT('Quick add...') ?></button>
+                <button class='btnquickadd' id='btnquickadd_<?php echo $i ?>' type='button'><?php $clang->eT('Quick add...') ?></button>
                 <p><input type='submit' name='method' value='<?php $clang->eT("Save changes") ?>'  id='saveallbtn_<?php echo $lslanguage ?>' /></p>
             </div>
             <?php
@@ -115,7 +115,7 @@
     </form>
     <div id='up_resmgmt'>
         <div>
-            <form class='form30' id='browselabelresources' name='browselabelresources'
+            <?php echo CHtml::form('', 'post', array('id'=>'browselabelresources','name'=>'browselabelresources')); ?>
                 action='<?php echo $this->createUrl("admin/kcfinder/index/load/browse"); ?>' method='get' target="_blank">
                 <ul style='list-style-type:none; text-align:center'>
                     <li>
@@ -126,12 +126,12 @@
                     <li>
                         <label>&nbsp;</label>
                         <input type='button'<?php echo hasResources($lid, 'label') === false ? ' disabled="disabled"' : '' ?>
-                            onclick='window.open("<?php echo $this->createUrl("/admin/export/resources/export/label/lid/$lid"); ?>", "_blank")'
+                            onclick='window.open("<?php echo $this->createUrl("/admin/export/sa/resources/export/label/lid/$lid"); ?>", "_blank")'
                             value="<?php $clang->eT("Export resources as ZIP archive") ?>"  />
                     </li>
                 </ul>
             </form>
-            <form class='form30' enctype='multipart/form-data' id='importlabelresources' name='importlabelresources'
+            <?php echo CHtml::form('', 'post', array('id'=>'importlabelresources','class'=>'form30', 'name'=>'importlabelresources', 'enctype'=>'multipart/form-data')); ?>
                 action='<?php echo $this->createUrl('/admin/labels/importlabelresources') ?>' method='post'
                 onsubmit='return validatefilename(this, "<?php $clang->eT('Please select a file to import!', 'js') ?>");'>
 

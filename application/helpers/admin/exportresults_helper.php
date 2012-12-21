@@ -52,7 +52,7 @@ class ExportSurveyResultsService
     * @param FormattingOptions $oOptions
     * @param string $sFilter 
     */
-    function exportSurvey($iSurveyId, $sLanguageCode, $sExportPlugin, FormattingOptions $oOptions, $sFilter)
+    function exportSurvey($iSurveyId, $sLanguageCode, $sExportPlugin, FormattingOptions $oOptions, $sFilter = '')
     {
         //Do some input validation.
         if (empty($iSurveyId))
@@ -71,7 +71,6 @@ class ExportSurveyResultsService
         {
             safeDie('At least one column must be selected for export.');
         }
-        
         //echo $oOptions->toString().PHP_EOL;
         $writer = null;
 
@@ -106,18 +105,18 @@ class ExportSurveyResultsService
         $bMoreRecords=true; $first=true;
         while ($bMoreRecords)
         {
- 
             $iExported= $surveyDao->loadSurveyResults($survey, $iBatchSize, $iCurrentRecord, $oOptions->responseMaxRecord, $sFilter);
             $iCurrentRecord+=$iExported;
             $writer->write($survey, $sLanguageCode, $oOptions,$first);
             $first=false;
             $bMoreRecords= ($iExported == $iBatchSize);
         }
-
-        $writer->close();
+        $result = $writer->close();
         if ($oOptions->output=='file')
         {
             return $writer->filename;
+        } else {
+            return $result;
         }
     }
 }
@@ -266,8 +265,14 @@ class SurveyDao
         'JOIN {{questions}} AS q ON a.qid = q.qid '.
         'WHERE q.sid = '.$intId.' AND a.language = \''.$lang.'\' '.
         'ORDER BY a.qid, a.sortorder;';
-        $survey->answers = Yii::app()->db->createCommand($sQuery)->query()->readAll();
-
+        //$survey->answers = Yii::app()->db->createCommand($sQuery)->queryAll();
+        $aAnswers= Yii::app()->db->createCommand($sQuery)->queryAll();
+        foreach($aAnswers as $aAnswer)
+        {
+             if(Yii::app()->controller->action->id !='remotecontrol')
+				$aAnswer['answer']=stripTagsFull($aAnswer['answer']);
+             $survey->answers[$aAnswer['qid']][$aAnswer['scale_id']][$aAnswer['code']]=$aAnswer;
+        }
         //Load tokens
         if (tableExists('{{tokens_' . $intId . '}}'))
         {
@@ -309,13 +314,14 @@ class SurveyDao
         if ($survey->info['savetimings']=="Y") {
             $oRecordSet->leftJoin("{{survey_" . $survey->id . "_timings}} survey_timings", "{{survey_" . $survey->id . "}}.id = survey_timings.id");
         }
-        
+
         if ($sFilter!='')
             $oRecordSet->where($sFilter);
-            if ($iOffset+$iLimit>$iMaximum)
-            {
-                $iLimit=$iMaximum-$iOffset;
-            }
+            
+        if ($iOffset+$iLimit>$iMaximum)
+        {
+            $iLimit=$iMaximum-$iOffset;
+        }
             
         $survey->responses=$oRecordSet->order('{{survey_' . $survey->id . '}}.id')->limit($iLimit, $iOffset)->query()->readAll();
 
@@ -516,7 +522,7 @@ class SurveyObj
         if ($questionId)
         {
             $answers = $this->getAnswers($questionId);
-            if (array_key_exists($answerCode, $answers))
+            if (isset($answers[$answerCode]))
             {
                 $answer = $answers[$answerCode]['answer'];
             }
@@ -690,29 +696,20 @@ class SurveyObj
     /**
     * Returns an array of possible answers to the question.  If $scaleId is
     * specified then only answers that match the $scaleId value will be
-    * returned. An empty array
-    * may be returned by this function if answers are found that match the
-    * questionId.
+    * returned. An empty array may be returned by this function if answers 
+    * are found that match the questionId.
     *
     * @param int $questionId
     * @param int $scaleId
     * @return array[string]array[string]mixed (or false)
     */
-    public function getAnswers($questionId, $scaleId = null)
+    public function getAnswers($questionId, $scaleId = '0')
     {
-        $answers = array();
-        foreach ($this->answers as $answer)
+        if(isset($this->answers[$questionId]) && isset($this->answers[$questionId][$scaleId]))
         {
-            if (null == $scaleId && $answer['qid'] == $questionId)
-            {
-                $answers[$answer['code']] = $answer;
-            }
-            else if ($answer['qid'] == $questionId && $answer['scale_id'] == $scaleId)
-                {
-                    $answers[$answer['code']] = $answer;
-                }
+            return $this->answers[$questionId][$scaleId];
         }
-        return $answers;
+        return array();
     }
 }
 
@@ -732,12 +729,10 @@ class Translator
     'datestamp' => 'Date last action',
     'startdate' => 'Date started',
     'submitdate' => 'Completed',
-    //'completed' => 'Completed',
     'ipaddr' => 'IP address',
     'refurl' => 'Referring URL',
     'lastpage' => 'Last page',
-    'startlanguage' => 'Start language'//,
-    //'tid' => 'Token ID'
+    'startlanguage' => 'Start language'
     );
 
     public function translate($key, $sLanguageCode)
@@ -839,7 +834,8 @@ abstract class Writer implements IWriter
 {
     protected $sLanguageCode;
     protected $translator;
-
+    public $filename;
+    
     protected function translate($key, $sLanguageCode)
     {
         return $this->translator->translate($key, $sLanguageCode);
@@ -864,6 +860,10 @@ abstract class Writer implements IWriter
     {
         $this->languageCode = $sLanguageCode;
         $this->translator = new Translator();
+        if ($oOptions->output == 'file') {
+            $sRandomFileName=Yii::app()->getConfig("tempdir") . DIRECTORY_SEPARATOR . randomChars(40);
+            $this->filename = $sRandomFileName;
+        }
     }
 
     
@@ -912,7 +912,7 @@ abstract class Writer implements IWriter
             $aid = $survey->fieldMap[$fieldName]['aid'];
             if (!empty($aid))
             {
-                $heading .= '['.$aid.']';
+                $heading .= '['.$this->stripTagsFull($aid).']';
             }
             return $heading;
         }
@@ -929,7 +929,7 @@ abstract class Writer implements IWriter
     * @return string (or false)
     */
     public function getFullHeading(SurveyObj $survey, FormattingOptions $oOptions, $fieldName)
-    {
+    {                                                  
         $question = $survey->fieldMap[$fieldName];
         
         $heading = $question['question'];
@@ -1032,7 +1032,7 @@ abstract class Writer implements IWriter
         }
 
         //rtrim the result since it could be an empty string ' ' which
-        //should be removed.
+        //should be removed.                          
         return rtrim($subHeading);
     }
 
@@ -1094,7 +1094,7 @@ abstract class Writer implements IWriter
                     }
                     if (!empty($value))
                     {
-                        $subHeading .= ' ['.$value.']';
+                        $subHeading .= ' ['.$this->stripTagsFull($value).']';
                     }
                 }
                 if (isset($isComment) && $isComment == true)
@@ -1205,7 +1205,7 @@ abstract class Writer implements IWriter
         }
 
         //This spot should only be reached if no transformation occurs.
-        return $this->stripTagsFull($value);
+        return $value;
     }
 
     /**
@@ -1268,8 +1268,8 @@ abstract class Writer implements IWriter
                 $headers[] = $value;
             }
         }
-
         //Output the results.
+        $sFile='';
         foreach($survey->responses as $response)
         {
             $elementArray = array();
@@ -1280,7 +1280,6 @@ abstract class Writer implements IWriter
             {
                 continue;
             }
-
             foreach ($oOptions->selectedColumns as $column)
             {
                 $value = $response[$column];
@@ -1298,13 +1297,18 @@ abstract class Writer implements IWriter
                     }
                 }
                 else //Token table value
-                {     
+                {
                     $elementArray[]=$value;
                 }
             }
-
-            $this->outputRecord($headers, $elementArray, $oOptions);
+            if ($oOptions->output=='display')
+            {
+                $this->outputRecord($headers, $elementArray, $oOptions);
+            } else {
+                $sFile.=$this->outputRecord($headers, $elementArray, $oOptions);
+            }
         }
+        return $sFile;
     }
 
     protected function stripTagsFull($string)
@@ -1332,6 +1336,10 @@ class CsvWriter extends Writer
     private $output;
     private $separator;
     private $hasOutputHeader;
+    /**
+     * The open filehandle
+     */
+    private $file = null;
 
     function __construct()
     {
@@ -1343,16 +1351,18 @@ class CsvWriter extends Writer
     public function init(SurveyObj $survey, $sLanguageCode, FormattingOptions $oOptions)
     {
         parent::init($survey, $sLanguageCode, $oOptions);
-        if ($oOptions->output=='display')
-            {
-                header("Content-Disposition: attachment; filename=results-survey".$survey->id.".csv");
-                header("Content-type: text/comma-separated-values; charset=UTF-8");
-            }
-
+        if ($oOptions->output=='display') {
+            header("Content-Disposition: attachment; filename=results-survey".$survey->id.".csv");
+            header("Content-type: text/comma-separated-values; charset=UTF-8");
+        } elseif ($oOptions->output == 'file') {
+            $this->file = fopen($this->filename, 'w');
+        }
+        
     }
     
     protected function outputRecord($headers, $values, FormattingOptions $oOptions)
     {
+        $sRecord='';
         if(!$this->hasOutputHeader)
         {
             $index = 0;
@@ -1361,14 +1371,8 @@ class CsvWriter extends Writer
                 $headers[$index] = $this->csvEscape($header);
                 $index++;
             }
-
             //Output the header...once and only once.
-            $sRecord=implode($this->separator, $headers);
-            if ($oOptions->output='display')
-            {
-                echo $sRecord; 
-            }
-
+            $sRecord.=implode($this->separator, $headers);
             $this->hasOutputHeader = true;
         }
         //Output the values.
@@ -1378,16 +1382,23 @@ class CsvWriter extends Writer
             $values[$index] = $this->csvEscape($value);
             $index++;
         }
-        $sRecord=PHP_EOL.implode($this->separator, $values);
-        if ($oOptions->output='display')
+        $sRecord.=PHP_EOL.implode($this->separator, $values);
+        if ($oOptions->output=='display')
         {
             echo $sRecord; 
-        }
+            $this->output = '';
+        } elseif ($oOptions->output == 'file') {
+            $this->output .= $sRecord;
+            fwrite($this->file, $this->output);
+            $this->output='';
+        } 
     }
 
     public function close()
     {
-        return $this->output;
+        if (!is_null($this->file)) {
+            fclose($this->file);
+        }
     }
 
     /**
@@ -1407,6 +1418,10 @@ class DocWriter extends Writer
     private $output;
     private $separator;
     private $isBeginning;
+    /**
+     * The open filehandle
+     */
+    private $file = null;
 
     public function __construct()
     {
@@ -1439,6 +1454,9 @@ class DocWriter extends Writer
         </style>';
         if ($oOptions->output=='display'){
             echo  $sOutput;
+        } elseif ($oOptions->output == 'file') {
+            $this->file = fopen($this->filename, 'w');
+            $this->output = $sOutput;
         }
     }
 
@@ -1452,11 +1470,7 @@ class DocWriter extends Writer
         if ($oOptions->answerFormat == 'short')
         {
             //No headers at all, only output values.
-            $this->output .= implode($this->separator, $values).PHP_EOL;
-            if ($oOptions->output=='display'){
-                echo  $this->output;
-                $this->output='';
-            }            
+            $this->output .= implode($this->separator, $values).PHP_EOL;          
         }
         elseif ($oOptions->answerFormat == 'long')
         {
@@ -1477,21 +1491,26 @@ class DocWriter extends Writer
                 $this->output .= "<tr><td>".$header."</td><td>".$values[$counter]."</td></tr>".PHP_EOL;
                 $counter++;
             }
-            $this->output .= "</table>".PHP_EOL;
-            if ($oOptions->output=='display'){
-                echo  $this->output;
-                $this->output='';
-            }
-            
+            $this->output .= "</table>".PHP_EOL;           
         }
         else
         {
             safeDie('An invalid answer format was selected.  Only \'short\' and \'long\' are valid.');
         }
+        if ($oOptions->output=='display'){
+            echo  $this->output;
+            $this->output='';
+        } elseif ($oOptions->output == 'file') {
+            fwrite($this->file, $this->output);
+            $this->output='';
+        }
     }
 
     public function close()
     {
+        if (!is_null($this->file)) {
+            fclose($this->file);
+        }
     }
 }
 
@@ -1510,8 +1529,7 @@ class ExcelWriter extends Writer
     private $rowCounter;
 
     //Indicates if the Writer is outputting to a file rather than sending via HTTP.
-    private $fileName;
-    private $outputToFile;
+    private $outputToFile = false;
 
     /**
     * The presence of a filename will cause the writer to output to
@@ -1534,8 +1552,8 @@ class ExcelWriter extends Writer
 
         if ($oOptions->output=='file')
         {
-            $oOptions['filename']=Yii::app()->getConfig("tempdir"). DIRECTORY_SEPARATOR . randomChars(40);            
-            $this->workbook = new xlswriter($oOptions['filename']);
+            $this->workbook = new xlswriter($this->filename);
+            $this->outputToFile = true;
         }
         else
         {
@@ -1543,7 +1561,10 @@ class ExcelWriter extends Writer
         }
         $this->workbook->setTempDir(Yii::app()->getConfig("tempdir"));
 
-        $this->workbook->send('results-survey'.$survey->id.'.xls');
+        if ($oOptions->output=='display') {
+            $this->workbook->send('results-survey'.$survey->id.'.xls');
+  
+        }
         $worksheetName = $survey->languageSettings[0]['surveyls_title'];
         $worksheetName=substr(str_replace(array('*', ':', '/', '\\', '?', '[', ']'),array(' '),$worksheetName),0,31); // Remove invalid characters
 
@@ -1597,18 +1618,15 @@ class PdfWriter extends Writer
     private $separator;
     private $rowCounter;
     private $pdfDestination;
-    private $fileName;
     private $surveyName;
 
     public function init(SurveyObj $survey, $sLanguageCode, FormattingOptions $oOptions)
     {
         parent::init($survey, $sLanguageCode, $oOptions);
         
-        if ($oOptions->output=='return') 
+        if ($oOptions->output=='file') 
         {
-            $sRandomFileName=Yii::app()->getConfig("tempdir") . DIRECTORY_SEPARATOR . randomChars(40);
             $this->pdfDestination = 'F';
-            $this->fileName = $sRandomFileName;
         } else {
             $this->pdfDestination = 'D';
         }
@@ -1673,7 +1691,7 @@ class PdfWriter extends Writer
         if ($this->pdfDestination == 'F')
         {
             //Save to file on filesystem.
-            $filename = $this->fileName;
+            $filename = $this->filename;
         }
         else
         {

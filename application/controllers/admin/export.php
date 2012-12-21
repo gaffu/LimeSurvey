@@ -135,6 +135,8 @@ class export extends Survey_Common_Action {
         if ( ! isset($type) ) { $type = returnGlobal('type'); }
         if ( ! isset($convertyto1) ) { $convertyto1 = returnGlobal('convertyto1'); }
         if ( ! isset($convertnto2) ) { $convertnto2 = returnGlobal('convertnto2'); }
+        if ( ! isset($convertyto) ) { $convertyto = returnGlobal('convertyto'); }
+        if ( ! isset($convertnto) ) { $convertnto = returnGlobal('convertnto'); }
         if ( ! isset($convertspacetous) ) { $convertspacetous = returnGlobal('convertspacetous'); }
         $clang = Yii::app()->lang;
 
@@ -185,10 +187,9 @@ class export extends Survey_Common_Action {
             $data['excesscols'] = $aFieldMap;
 
             //get max number of datasets
-            $max_datasets_query = Yii::app()->db->createCommand("SELECT COUNT(id) AS count FROM {{survey_".intval($iSurveyID)."}}")->query()->read();
-            $max_datasets = $max_datasets_query['count'];
+            $iMaximum = Yii::app()->db->createCommand("SELECT count(id) FROM {{survey_".intval($iSurveyID)."}}")->queryScalar();
 
-            $data['max_datasets'] = $max_datasets;
+            $data['max_datasets'] = $iMaximum;
             $data['surveyid'] = $iSurveyID;
             $data['imageurl'] = Yii::app()->getConfig('imageurl');
             $data['thissurvey'] = $thissurvey;
@@ -219,14 +220,14 @@ class export extends Survey_Common_Action {
 
         if ( $options->convertN )
         {
-            $options->nValue = $convertnto2;
+            $options->nValue = $convertnto;
         }
 
         $options->convertY = $convertyto1;
 
         if ( $options->convertY )
         {
-            $options->yValue = $convertyto1;
+            $options->yValue = $convertyto;
         }
 
         $options->headerSpacesToUnderscores = $convertspacetous;
@@ -248,8 +249,8 @@ class export extends Survey_Common_Action {
         {
             $options->selectedColumns[]="email";
         }
-        $attributeFields = getTokenFieldsAndNames($iSurveyID, TRUE);
-        foreach ($attributeFields as $attr_name => $attr_desc)
+        $attributeFields = array_keys(getTokenFieldsAndNames($iSurveyID, TRUE));
+        foreach ($attributeFields as $attr_name)
         {
             if ( in_array($attr_name, Yii::app()->request->getPost('attribute_select',array())) )
             {
@@ -311,7 +312,7 @@ class export extends Survey_Common_Action {
             Yii::app()->session['spssversion'] = $spssver;
         }
 
-        $length_varlabel = '255'; // Set the max text length of Variable Labels
+        $length_varlabel = '231'; // Set the max text length of Variable Labels
         $length_vallabel = '120'; // Set the max text length of Value Labels
 
         switch ( $spssver )
@@ -394,13 +395,15 @@ class export extends Survey_Common_Action {
 
             //Now get the query string with all fields to export
             $query = SPSSGetQuery($iSurveyID);
-            $result = Yii::app()->db->createCommand($query)->query()->readAll(); //Checked
+            $result = Yii::app()->db->createCommand($query)->query();
 
-            $num_fields = isset( $result[0] ) ? count($result[0]) : 0;
-            
+            $num_fields = 0;
             //Now we check if we need to adjust the size of the field or the type of the field
             foreach ( $result as $row )
             {
+                if($num_fields==0) {
+                    $num_fields = count($row);
+                }
                 $row = array_values($row);
                 $fieldno = 0;
 
@@ -425,6 +428,7 @@ class export extends Survey_Common_Action {
                     $fieldno++;
                 }
             }
+            $result->close();
 
             /**
             * End of DATA print out
@@ -480,7 +484,17 @@ class export extends Survey_Common_Action {
             {
                 if ( ! $field['hide'] )
                 {
-                    echo "VARIABLE LABELS " . $field['id'] . " \"" . str_replace('"','""',mb_substr(stripTagsFull($field['VariableLabel']), 0, $length_varlabel)) . "\".\n";
+                    $label_parts = strSplitUnicode(str_replace('"','""',stripTagsFull($field['VariableLabel'])), $length_varlabel-strlen($field['id']));
+                    //if replaced quotes are splitted by, we need to mve the first quote to the next row
+                    foreach($label_parts as $idx => $label_part)
+                    {
+                        if($idx != count($label_parts) && substr($label_part,-1) == '"' && substr($label_part,-2) != '"')
+                        {
+                            $label_parts[$idx] = rtrim($label_part, '"');
+                            $label_parts[$idx + 1] = '"' . $label_parts[$idx + 1];
+                        }
+                    }
+                    echo "VARIABLE LABELS " . $field['id'] . " \"" . implode("\"+\n\"", $label_parts) . "\".\n";
                 }
             }
 
@@ -667,12 +681,14 @@ class export extends Survey_Common_Action {
             $query = SPSSGetQuery($iSurveyID);
 
             $result = Yii::app()->db->createCommand($query)->query(); //Checked
-            $result = $result->readAll();
-            $num_fields = isset( $result[0] ) ? count($result[0]) : array();
 
+            $num_fields = 0;
             //Now we check if we need to adjust the size of the field or the type of the field
             foreach ( $result as $row )
             {
+                if($num_fields==0) {
+                    $num_fields = count($row);
+                }
                 $row = array_values($row);
                 $fieldno = 0;
 
@@ -698,6 +714,7 @@ class export extends Survey_Common_Action {
                     $fieldno++;
                 }
             }
+            $result->close();
 
             $errors = "";
             $i = 1;
@@ -1022,10 +1039,10 @@ class export extends Survey_Common_Action {
         file_put_contents($f3, $quexml);
         file_put_contents($f4, $clang->gT('This archive contains a PDF file of the survey, the queXML file of the survey and a queXF banding XML file which can be used with queXF: http://quexf.sourceforge.net/ for processing scanned surveys.'));
 
-        Yii::import('application.libraries.admin.Phpzip', TRUE);
-        $z = new Phpzip;
+        Yii::app()->loadLibrary('admin.pclzip.pclzip');
         $zipfile="$tempdir/quexmlpdf_{$qid}_{$surveyprintlang}.zip";
-        $z->Zip($zipdir, $zipfile);
+        $z = new PclZip($zipfile);
+        $z->create($zipdir, PCLZIP_OPT_REMOVE_PATH, $zipdir);
 
         unlink($f1);
         unlink($f2);

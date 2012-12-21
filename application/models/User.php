@@ -21,7 +21,7 @@ class User extends CActiveRecord
     * @static
     * @access public
     * @param string $class
-    * @return CActiveRecord
+    * @return User
     */
     public static function model($class = __CLASS__)
     {
@@ -154,7 +154,27 @@ class User extends CActiveRecord
         }
     }
 
-
+    /**
+	 * This method is invoked before saving a record (after validation, if any).
+	 * The default implementation raises the {@link onBeforeSave} event.
+	 * You may override this method to do any preparation work for record saving.
+	 * Use {@link isNewRecord} to determine whether the saving is
+	 * for inserting or updating record.
+	 * Make sure you call the parent implementation so that the event is raised properly.
+	 * @return boolean whether the saving should be executed. Defaults to true.
+	 */
+    public function beforeSave()
+    {
+         // Postgres delivers bytea fields as streams :-o - if this is not done it looks like Postgres saves something unexpected
+        if (gettype($this->password)=='resource')
+        {
+            $this->password=stream_get_contents($this->password,-1,0); 
+        }
+        
+        return parent::beforeSave();
+    }
+    
+    
     /**
     * Delete user
     *
@@ -189,8 +209,18 @@ class User extends CActiveRecord
     */
     public function getName($userid)
     {
-        return Yii::app()->db->createCommand()->select('full_name')->from('{{users}}')->where("uid = :userid")->bindParam(":userid", $userid, PDO::PARAM_INT)->queryAll();
+        static $aOwnerCache = array();
+        
+        if (array_key_exists($userid, $aOwnerCache)) {
+            $result = $aOwnerCache[$userid];
+        } else {
+            $result = Yii::app()->db->createCommand()->select('full_name')->from('{{users}}')->where("uid = :userid")->bindParam(":userid", $userid, PDO::PARAM_INT)->queryAll();
+            $aOwnerCache[$userid] = $result;
+        }
+        
+        return $result;
     }
+    
     public function getuidfromparentid($parentid)
     {
         return Yii::app()->db->createCommand()->select('uid')->from('{{users}}')->where('parent_id = :parent_id')->bindParam(":parent_id", $parentid, PDO::PARAM_INT)->queryRow();

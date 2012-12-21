@@ -42,9 +42,9 @@ if(isset($groupfound))
             <tr class='<?php echo $currentuser["rowclass"];?>'>
                 <td align='center'>
                 <?php
-                if($currentuser["displayactions"])
+                if(isset($currentuser["displayactions"]) && $currentuser["displayactions"] == true)
                 { ?>
-                    <form method='post' action='<?php echo $this->createUrl("admin/usergroups/user/ugid/{$usergroupid}/action/remove"); ?>'>
+                    <?php echo CHtml::form(array("admin/usergroups/sa/user/ugid/{$ugid}/action/remove"), 'post'); ?>
                     <input type='image' src='<?php echo Yii::app()->getConfig('adminimageurl')?>/token_delete.png' alt='<?php $clang->eT("Delete this user from group");?>' onclick='return confirm("<?php $clang->eT("Are you sure you want to delete this entry?","js");?>")' />
                     <input name='uid' type='hidden' value='<?php echo $currentuser["userid"]; ?>' />
                     </form>
@@ -72,7 +72,7 @@ if(isset($groupfound))
 if (!empty($useradddialog))
 {
 	?>
-        <form action='<?php echo $this->createUrl("admin/usergroups/user/ugid/{$ugid}/action/add"); ?>' method='post'>
+        <?php echo CHtml::form(array("admin/usergroups/sa/user/ugid/{$ugid}/action/add"), 'post'); ?>
             <table class='users'>
                 <tbody>
                     <tr>

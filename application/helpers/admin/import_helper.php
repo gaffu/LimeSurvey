@@ -987,7 +987,7 @@ function XMLImportGroup($sFullFilepath, $iNewSID)
             $insertdata['qid']=$aQIDReplacements[(int)$insertdata['qid']]; // remap the parent_qid
 
 
-            if ($iDBVersion<148 && isset($aAllAttributes[$insertdata['attribute']]['i18n']) && $aAllAttributes[$insertdata['attribute']]['i18n'])
+            if ($iDBVersion<156 && isset($aAllAttributes[$insertdata['attribute']]['i18n']) && $aAllAttributes[$insertdata['attribute']]['i18n'])
             {
                 foreach ($importlanguages as $sLanguage)
                 {
@@ -1866,7 +1866,7 @@ function XMLImportQuestion($sFullFilepath, $iNewSID, $newgid)
             $insertdata['qid']=$aQIDReplacements[(integer)$insertdata['qid']]; // remap the parent_qid
 
 
-            if ($iDBVersion<148 && isset($aAllAttributes[$insertdata['attribute']]['i18n']) && $aAllAttributes[$insertdata['attribute']]['i18n'])
+            if ($iDBVersion<156 && isset($aAllAttributes[$insertdata['attribute']]['i18n']) && $aAllAttributes[$insertdata['attribute']]['i18n'])
             {
                 foreach ($importlanguages as $sLanguage)
                 {
@@ -3460,6 +3460,10 @@ function XMLImportSurvey($sFullFilepath,$sXMLdata=NULL,$sNewSurveyName=NULL,$iDe
         {
             $insertdata['wishSID']=GetNewSurveyID($iDesiredSurveyId);
         }
+        else
+        {
+            $insertdata['wishSID']=$iOldSID;
+        }
 
         if ($iDBVersion<=143)
         {
@@ -3709,7 +3713,7 @@ function XMLImportSurvey($sFullFilepath,$sXMLdata=NULL,$sNewSurveyName=NULL,$iDe
             unset($insertdata['qaid']);
             if (!isset($aQIDReplacements[(int)$insertdata['qid']])) continue;
             $insertdata['qid']=$aQIDReplacements[(integer)$insertdata['qid']]; // remap the qid
-            if ($iDBVersion<148 && isset($aAllAttributes[$insertdata['attribute']]['i18n']) && $aAllAttributes[$insertdata['attribute']]['i18n'])
+            if ($iDBVersion<156 && isset($aAllAttributes[$insertdata['attribute']]['i18n']) && $aAllAttributes[$insertdata['attribute']]['i18n'])
             {
                 foreach ($aLanguagesSupported as $sLanguage)
                 {
@@ -3997,6 +4001,12 @@ function XMLImportTokens($sFullFilepath,$iSurveyID,$sCreateMissingAttributeField
         return $results;
     }
 
+    if (!isset($xml->tokens->fields))
+    {
+        $results['tokens']=0;
+        return $results;
+    }
+    
     $results['tokens']=0;
     $results['tokenfieldscreated']=0;
 

@@ -76,11 +76,11 @@ class database extends Survey_Common_Action
                 {
                     foreach ($questlangs as $language)
                     {
-                        if (Yii::app()->request->getPost('defaultanswerscale_'.$scale_id.'_'.$language))
+                        if (!is_null(Yii::app()->request->getPost('defaultanswerscale_'.$scale_id.'_'.$language)))
                         {
                             $this->_updateDefaultValues($qid,0,$scale_id,'',$language,Yii::app()->request->getPost('defaultanswerscale_'.$scale_id.'_'.$language),true);
                         }
-                        if (Yii::app()->request->getPost('other_'.$scale_id.'_'.$language))
+                        if (!is_null(Yii::app()->request->getPost('other_'.$scale_id.'_'.$language)))
                         {
                             $this->_updateDefaultValues($qid,0,$scale_id,'other',$language,Yii::app()->request->getPost('other_'.$scale_id.'_'.$language),true);
                         }
@@ -100,7 +100,7 @@ class database extends Survey_Common_Action
 
                         foreach ($sqresult as $aSubquestionrow)
                         {
-                            if (Yii::app()->request->getPost('defaultanswerscale_'.$scale_id.'_'.$language.'_'.$aSubquestionrow['qid']))
+                            if (!is_null(Yii::app()->request->getPost('defaultanswerscale_'.$scale_id.'_'.$language.'_'.$aSubquestionrow['qid'])))
                             {
                                 $this->_updateDefaultValues($qid,$aSubquestionrow['qid'],$scale_id,'',$language,Yii::app()->request->getPost('defaultanswerscale_'.$scale_id.'_'.$language.'_'.$aSubquestionrow['qid']),true);
                             }
@@ -112,7 +112,7 @@ class database extends Survey_Common_Action
             {
                 foreach ($questlangs as $language)
                 {
-                    if (Yii::app()->request->getPost('defaultanswerscale_0_'.$language.'_0'))
+                    if (!is_null(Yii::app()->request->getPost('defaultanswerscale_0_'.$language.'_0')))
                     {
                         $this->_updateDefaultValues($postqid,0,0,'',$language,Yii::app()->request->getPost('defaultanswerscale_0_'.$language.'_0'),true);
                     }
@@ -127,7 +127,7 @@ class database extends Survey_Common_Action
             }
             else
             {
-                $this->getController()->redirect($this->getController()->createUrl('/admin/survey/view/surveyid/'.$surveyid.'/gid/'.$gid.'/qid/'.$qid));
+                $this->getController()->redirect($this->getController()->createUrl('admin/survey/sa/view/surveyid/'.$surveyid.'/gid/'.$gid.'/qid/'.$qid));
             }
         }
 
@@ -215,14 +215,14 @@ class database extends Survey_Common_Action
             if ($duplicateCode == 1) $databaseoutput .= "<script type=\"text/javascript\">\n<!--\n alert(\"".$clang->gT("Duplicate codes found, these entries won't be updated","js")."\")\n //-->\n</script>\n";
 
             Yii::app()->session['flashmessage']= $clang->gT("Answer options were successfully saved.");
-
+            LimeExpressionManager::SetDirtyFlag();
             if ($databaseoutput != '')
             {
                 echo $databaseoutput;
             }
             else
             {
-                $this->getController()->redirect($this->getController()->createUrl('/admin/question/answeroptions/surveyid/'.$surveyid.'/gid/'.$gid.'/qid/'.$qid));
+                $this->getController()->redirect($this->getController()->createUrl('/admin/question/sa/answeroptions/surveyid/'.$surveyid.'/gid/'.$gid.'/qid/'.$qid));
             }
 
             //$action='editansweroptions';
@@ -349,14 +349,14 @@ class database extends Survey_Common_Action
             Yii::app()->session['flashmessage'] = $clang->gT("Subquestions were successfully saved.");
 
             //$action='editsubquestions';
-
+            LimeExpressionManager::SetDirtyFlag();
             if ($databaseoutput != '')
             {
                 echo $databaseoutput;
             }
             else
             {
-                $this->getController()->redirect($this->getController()->createUrl('/admin/question/subquestions/surveyid/'.$surveyid.'/gid/'.$gid.'/qid/'.$qid));
+                $this->getController()->redirect($this->getController()->createUrl('/admin/question/sa/subquestions/surveyid/'.$surveyid.'/gid/'.$gid.'/qid/'.$qid));
             }
         }
 
@@ -371,8 +371,6 @@ class database extends Survey_Common_Action
             }
             else
             {
-                if (!Yii::app()->request->getPost('lid') || Yii::app()->request->getPost('lid') == '') {$_POST['lid']="0";}
-                if (!Yii::app()->request->getPost('lid1') || Yii::app()->request->getPost('lid1') == '') {$_POST['lid1']="0";}
                 if (Yii::app()->request->getPost('questionposition',"")!="")
                 {
                     $question_order= intval(Yii::app()->request->getPost('questionposition'));
@@ -588,7 +586,7 @@ class database extends Survey_Common_Action
             }
             else
             {
-                $this->getController()->redirect($this->getController()->createUrl('admin/survey/view/surveyid/'.$surveyid.'/gid/'.$gid.'/qid/'.$qid));
+                $this->getController()->redirect($this->getController()->createUrl('admin/survey/sa/view/surveyid/'.$surveyid.'/gid/'.$gid.'/qid/'.$qid));
             }
         }
 
@@ -880,9 +878,9 @@ class database extends Survey_Common_Action
             else
             {
                 if(Yii::app()->request->getPost('newpage') == "return") {
-                    $this->getController()->redirect($this->getController()->createUrl('admin/question/editquestion/surveyid/'.$surveyid.'/gid/'.$gid.'/qid/'.$qid));
+                    $this->getController()->redirect($this->getController()->createUrl('admin/question/sa/editquestion/surveyid/'.$surveyid.'/gid/'.$gid.'/qid/'.$qid));
                 } else {
-                    $this->getController()->redirect($this->getController()->createUrl('admin/survey/view/surveyid/'.$surveyid.'/gid/'.$gid.'/qid/'.$qid));
+                    $this->getController()->redirect($this->getController()->createUrl('admin/survey/sa/view/surveyid/'.$surveyid.'/gid/'.$gid.'/qid/'.$qid));
                 }
             }
         }
@@ -961,7 +959,7 @@ class database extends Survey_Common_Action
             }
             else
             {
-                $this->getController()->redirect($this->getController()->createUrl('admin/survey/view/surveyid/'.$surveyid));
+                $this->getController()->redirect($this->getController()->createUrl('admin/survey/sa/view/surveyid/'.$surveyid));
             }
         }
 
@@ -1002,7 +1000,6 @@ class database extends Survey_Common_Action
             {
                 $tokenlength = 15;
             }
-
 
             cleanLanguagesFromSurvey($surveyid,Yii::app()->request->getPost('languageids'));
 
@@ -1078,8 +1075,12 @@ class database extends Survey_Common_Action
             'googleanalyticsstyle'=>trim(Yii::app()->request->getPost('googleanalyticsstyle')),
             'tokenlength'=>$tokenlength
             );
-
-            Survey::model()->updateByPk($surveyid, $updatearray);
+            // use model
+            $Survey=Survey::model()->findByPk($surveyid);
+            foreach ($updatearray as $k => $v)
+                $Survey->$k = $v;
+            $Survey->save();
+#            Survey::model()->updateByPk($surveyid, $updatearray);
             $sqlstring = "surveyls_survey_id=:sid AND surveyls_language <> :base ";
             $params = array(':sid'=>$surveyid, ':base'=>Survey::model()->findByPk($surveyid)->language);
 
@@ -1130,16 +1131,13 @@ class database extends Survey_Common_Action
                 Yii::app()->session['flashmessage'] = $clang->gT("Error:").'<br>'.$clang->gT("Survey could not be updated.");
             }
 
-
-            //redirect(site_url('admin/survey/view/'.$surveyid));
-
             if (Yii::app()->request->getPost('action') == "updatesurveysettingsandeditlocalesettings")
             {
-                $this->getController()->redirect($this->getController()->createUrl('/admin/survey/editlocalsettings/surveyid/'.$surveyid));
+                $this->getController()->redirect($this->getController()->createUrl('admin/survey/sa/editlocalsettings/surveyid/'.$surveyid));
             }
             else
             {
-                $this->getController()->redirect($this->getController()->createUrl('/admin/survey/view/surveyid/'.$surveyid));
+                $this->getController()->redirect($this->getController()->createUrl('admin/survey/sa/view/surveyid/'.$surveyid));
             }
 
         }

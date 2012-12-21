@@ -73,7 +73,8 @@ class Save {
         ."\t//-->\n"
         ."\t</script>\n\n";
 
-        echo "<form method='post' action='".Yii::app()->getController()->createUrl("/survey/index")."'>\n";
+        echo CHtml::form(array("/survey/index"), 'post')."\n";
+        
         //PRESENT OPTIONS SCREEN
         if (isset($errormsg) && $errormsg != "")
         {
@@ -209,6 +210,10 @@ class Save {
                 else
                 {
                     $errormsg .= $clang->gT('Error: Email failed, this may indicate a PHP Mail Setup problem on the server. Your survey details have still been saved, however you will not get an email with the details. You should note the "name" and "password" you just used for future reference.');
+                    if (trim($thissurvey['adminemail'])=='')
+                    {
+                        $errormsg .=$clang->gT('(Reason: Admin email address empty)');    
+                    }
                 }
             }
             return $clang->gT('Your survey was successfully saved.');
@@ -247,7 +252,12 @@ class Save {
         }
         else
         {
-            echo $clang->gT('Error: Email failed, this may indicate a PHP Mail Setup problem on your server. Your survey details have still been saved, however you will not get an email with the details. You should note the "name" and "password" you just used for future reference.');
+            $clang->eT('Error: Email failed, this may indicate a PHP Mail Setup problem on your server. Your survey details have still been saved, however you will not get an email with the details. You should note the "name" and "password" you just used for future reference.');
+            if (trim($thissurvey['adminemail'])=='')
+            {
+                $clang->eT('(Reason: Admin email address empty)');    
+            }
+            
         };
         return  $clang->gT('Your survey was successfully saved.');
     }

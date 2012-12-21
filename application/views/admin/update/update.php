@@ -8,9 +8,12 @@ echo '<li>'.$clang->gT('New files will be downloaded and installed.').'</li>';
 echo '<li>'.$clang->gT('If necessary the database will be updated.').'</li></ul><br>';
 echo '<h3>'.$clang->gT('Checking basic requirements...').'</h3>';
 if ($updatekey==''){
-    $clang->eT('You need an update key to run the ComfortUpdate. During the beta test of this update feature the key "LIMESURVEYUPDATE" can be used.');
-    echo "<br /><br /><form id='keyupdate' method='post' action='".Yii::app()->getController()->createUrl("admin/update/index/subaction/keyupdate")."'><label for='updatekey'>".$clang->gT('Please enter a valid update-key:').'</label>';
-    echo '<input id="updatekey" name="updatekey" type="text" value="LIMESURVEYUPDATE" /> <input type="submit" value="'.$clang->gT('Save update key').'" /></form>';
+    $clang->eT('You need an update key to run the ComfortUpdate. During the beta test of this update feature the key "LIMESURVEYUPDATE" can be used.');?>
+    <br /><br />
+    <?php echo CHtml::form(array("admin/update/sa/index/subaction/keyupdate"), 'post', array('id'=>'keyupdate')); ?>
+    <label for='updatekey'><?php $clang->eT('Please enter a valid update-key:');?> </label>
+    <input id="updatekey" name="updatekey" type="text" value="LIMESURVEYUPDATE" /> <input type="submit" value="<?php $clang->eT('Save update key')?>" /></form>
+    <?php
 }
 else
 {
@@ -38,13 +41,13 @@ else
     if ($error)
     {
         echo '<br /><br />'.$clang->gT('When checking your installation we found one or more problems. Please check for any error messages above and fix these before you can proceed.');
-        echo "<p><button onclick=\"window.open('".Yii::app()->getController()->createUrl("admin/update/index/")."', '_top')\"";
+        echo "<p><button onclick=\"window.open('".Yii::app()->getController()->createUrl("admin/update/sa/index/")."', '_top')\"";
         echo ">".$clang->gT('Check again')."</button></p>";
     }
     else
     {
         echo '<br /><br />'.$clang->gT('Everything looks alright. Please proceed to the next step.');
-        echo "<p><button onclick=\"window.open('".Yii::app()->getController()->createUrl("admin/update/step2/")."', '_top')\"";
+        echo "<p><button onclick=\"window.open('".Yii::app()->getController()->createUrl("admin/update/sa/step2/")."', '_top')\"";
         if ($updatekey==''){    echo "disabled='disabled'"; }
         echo ">".sprintf($clang->gT('Proceed to step %s'),'2')."</button></p>";
     }

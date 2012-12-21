@@ -173,6 +173,7 @@ class InstallerController extends CController {
         {
             $this->redirect($this->createUrl('installer/precheck'));
         }
+        Yii::app()->session['saveCheck'] = 'save';  // Checked in next step
 
         $this->render('/installer/license_view',$aData);
     }
@@ -363,7 +364,8 @@ class InstallerController extends CController {
                         .$clang->gT("The database you specified does not exist:")."<br /><br />\n<strong>".$model->dbname."</strong><br /><br />\n"
                         .$clang->gT("LimeSurvey can attempt to create this database for you.")."<br /><br />\n";
 
-                        $values['adminoutputForm'] = "<form action='".$this->createUrl("installer/createdb")."' method='post'><input type='submit' value='"
+                        $values['adminoutputForm'] =  CHtml::form(array('installer/createdb'), 'post').
+                        "<input type='submit' value='"
                         .$clang->gT("Create database")."' class='ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only' /></form>";
                     }
                     elseif ($dbexistsbutempty) //&& !(returnGlobal('createdbstep2')==$clang->gT("Populate database")))
@@ -375,7 +377,7 @@ class InstallerController extends CController {
                         $values['adminoutputText'].= sprintf($clang->gT('A database named "%s" already exists.'),$model->dbname)."<br /><br />\n"
                         .$clang->gT("Do you want to populate that database now by creating the necessary tables?")."<br /><br />";
 
-                        $values['adminoutputForm']= "<form method='post' action='".$this->createUrl("installer/populatedb")."'>"
+                        $values['adminoutputForm'] =  CHtml::form(array('installer/populatedb'), 'post')
                         ."<input class='ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only' type='submit' name='createdbstep2' value='".$clang->gT("Populate database")."' />"
                         ."</form>";
                     }
@@ -491,7 +493,7 @@ class InstallerController extends CController {
             ."<strong><font class='successtitle'>\n"
             .$clang->gT("Database has been created.")."</font></strong><br /><br />\n"
             .$clang->gT("Please continue with populating the database.")."<br /><br />\n";
-            $aData['adminoutputForm'] = "<form method='post' action='".$this->createUrl('installer/populatedb')."'>"
+            $aData['adminoutputForm'] =  CHtml::form(array('installer/populatedb'), 'post')
             ."<input class='ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only' type='submit' name='createdbstep2' value='".$clang->gT("Populate database")."' /></form>";
         }
         else
@@ -624,7 +626,7 @@ class InstallerController extends CController {
                     $password_hash=hash('sha256', $defaultpass);
                     try {
                         $this->connection->createCommand()->insert('{{users}}', array('users_name' => $defaultuser, 'password' => $password_hash, 'full_name' => $siteadminname, 'parent_id' => 0, 'lang' => $defaultlang, 'email' => $siteadminemail, 'create_survey' => 1, 'create_user' => 1, 'participant_panel' => 1, 'delete_user' => 1, 'superadmin' => 1, 'configurator' => 1, 'manage_template' => 1, 'manage_label' => 1));
-                        $this->connection->createCommand()->insert("{{settings_global}}", array('stg_name' => 'SessionName', 'stg_value' => 'ls'.self::_getRandomID().self::_getRandomID().self::_getRandomID()));
+                        $this->connection->createCommand()->insert("{{settings_global}}", array('stg_name' => 'SessionName', 'stg_value' => self::_getRandomString()));
 
                         foreach(array('sitename', 'siteadminname', 'siteadminemail', 'siteadminbounce', 'defaultlang') as $insert) {
                             $this->connection->createCommand()->insert("{{settings_global}}", array('stg_name' => $insert, 'stg_value' => $$insert));
@@ -813,6 +815,10 @@ class InstallerController extends CController {
         if (!check_PHPFunction('mb_convert_encoding', $data['mbstringPresent']))
             $bProceed = false;
 
+        // JSON library check
+        if (!check_PHPFunction('json_encode', $data['bJSONPresent']))
+            $bProceed = false;
+            
         // ** file and directory permissions checking **
 
         // config directory
@@ -826,6 +832,17 @@ class InstallerController extends CController {
         //upload directory check
         if (!check_DirectoryWriteable(Yii::app()->getConfig('uploaddir').'/', $data, 'uploaddir', 'uerror',true) )
             $bProceed = false;
+        
+        // Session writable check
+        $session = Yii::app()->session; /* @var $session CHttpSession */
+        $sessionWritable = ($session->get('saveCheck', null)==='save');
+        $data['sessionWritable'] = $sessionWritable;
+        $data['sessionWritableImg'] = check_HTML_image($sessionWritable);
+        if (!$sessionWritable){  
+            // For recheck, try to set the value again
+            $session['saveCheck'] = 'save';
+            $bProceed = false;
+        }
 
         // ** optional settings check **
 
@@ -940,7 +957,15 @@ class InstallerController extends CController {
             //{
             $showScriptName = 'true';
             //}
-
+            if (stripos($_SERVER['SERVER_SOFTWARE'], 'apache') !== false)
+            {
+                $sURLFormat='path';
+            }
+            else
+            {
+                $sURLFormat='get'; // Fall back to get if an Apache server cannot be determined reliably
+            }
+            
             $dbdata = "<?php if (!defined('BASEPATH')) exit('No direct script access allowed');" . "\n"
             ."/*"."\n"
             ."| -------------------------------------------------------------------"."\n"
@@ -1016,7 +1041,7 @@ class InstallerController extends CController {
             */
 
             ."\t\t"   . "'urlManager' => array("                    . "\n"
-            ."\t\t\t" . "'urlFormat' => 'path',"                    . "\n"
+            ."\t\t\t" . "'urlFormat' => '{$sURLFormat}',"           . "\n"
             ."\t\t\t" . "'rules' => require('routes.php'),"         . "\n"
             ."\t\t\t" . "'showScriptName' => $showScriptName,"      . "\n"
             ."\t\t"   . "),"                                        . "\n"
@@ -1029,7 +1054,8 @@ class InstallerController extends CController {
             ."\t"     . "// then please check your error-logs - either in your hosting provider admin panel or in some /logs directory". "\n"
             ."\t"     . "// on your webspace.". "\n"
             ."\t"     . "// LimeSurvey developers: Set this to 2 to additionally display STRICT PHP error messages and get full access to standard templates". "\n"
-            ."\t\t"   . "'debug'=>0"                                . "\n"
+            ."\t\t"   . "'debug'=>0,"                                . "\n"
+            ."\t\t"   . "'debugsql'=>0 // Set this to 1 to enanble sql logging, only active when debug = 2" . "\n"
             ."\t"     . ")"                                         . "\n"
             . ");"                                        . "\n"
             . "/* End of file config.php */"              . "\n"
@@ -1038,6 +1064,9 @@ class InstallerController extends CController {
             if (is_writable(APPPATH . 'config')) {
                 file_put_contents(APPPATH . 'config/config.php', $dbdata);
                 Yii::app()->session['configFileWritten'] = true;
+                $oUrlManager = Yii::app()->getComponent('urlManager');
+                /* @var $oUrlManager CUrlManager */
+                $oUrlManager->setUrlFormat($sURLFormat);
             } else {
                 header('refresh:5;url='.$this->createUrl("installer/welcome"));
                 echo "<b>".$clang->gT("Configuration directory is not writable")."</b><br/>";
@@ -1048,23 +1077,19 @@ class InstallerController extends CController {
     }
 
     /**
-    * Create a random survey ID
-    *
-    * based on code from Ken Lyle
+    * Create a random ASCII string 
     *
     * @return string
     */
-    function _getRandomID()
+    function _getRandomString()
     {
-        // Create a random survey ID -
-        // Random sid/ question ID generator...
-        $totalChar = 5; // number of chars in the sid
-        $salt = "123456789"; // This is the char. that is possible to use
-        srand((double)microtime()*1000000); // start the random generator
-        $sid=""; // set the inital variable
-        for ($i=0;$i<$totalChar;$i++) // loop and create sid
-            $sid = $sid . substr ($salt, rand() % strlen($salt), 1);
-        return $sid;
+        $totalChar = 64; // number of chars in the sid
+        $sResult='';
+        for ($i=0;$i<$totalChar;$i++)
+        {
+           $sResult.=chr(rand(33,126));
+        }
+        return $sResult;
     }
 
     /**
@@ -1182,80 +1207,6 @@ class InstallerController extends CController {
             } else {
                 return false;
             }
-        }
-    }
-
-    /**
-    * Function to install the LimeSurvey database from the command line
-    * Call it like:
-    *    php index.php installer cmd_install_db
-    * from your command line
-    * The function assumes that /config/database.php is already configured and the database controller
-    * is added in autoload.php in the libraries array
-    *
-    */
-    function cmd_install_db()
-    {
-        if (php_sapi_name() != 'cli')
-        {
-            die('This function can only be run from the command line');
-        }
-
-        $sDbType = $this->db->dbdriver;
-        if (!in_array($sDbType, InstallerConfigForm::supported_db_types)) {
-            throw new Exception(sprintf('Unkown database type "%s".', $sDbType));
-        }
-
-        $aDbConfig = array(
-        'sDatabaseName' => $this->db->database,
-        'sDatabaseLocation' => $this->db->hostname,
-        'sDatabaseUser' => $this->db->username,
-        'sDatabasePwd' => $this->db->password,
-        'sDatabaseType' => $sDbType,
-        'sDatabasePort' => $this->db->port,
-        );
-
-        $sDbPrefix= $this->db->dbprefix;
-        self::_dbConnect($aDbConfig);
-        $aErrors = self::_setup_tables(Yii::app()->getConfig('rootdir').'/installer/sql/create-'.$sFileName.'.sql',$aDbConfig,$sDbPrefix);
-
-        foreach ($aErrors as $sError)
-        {
-            echo $sError.PHP_EOL;
-        }
-
-        $sPasswordHash=hash('sha256', Yii::app()->getConfig('defaultpass'));
-
-        try {
-            $this->connection->createCommand()->insert("{{settings_global}}", array('stg_name' => 'SessionName', 'stg_value' => 'ls'.self::_getRandomID().self::_getRandomID().self::_getRandomID()));
-            $this->connection->createCommand()->insert('{{users}}', array(
-            'users_name'=>Yii::app()->getConfig('defaultuser'),
-            'password'=>$sPasswordHash,
-            'full_name'=>Yii::app()->getConfig('siteadminname'),
-            'parent_id'=>0,
-            'lang'=>'auto',
-            'email'=>Yii::app()->getConfig('siteadminemail'),
-            'create_survey'=>1,
-            'participant_panel'=>1,
-            'create_user'=>1,
-            'delete_user'=>1,
-            'superadmin'=>1,
-            'configurator'=>1,
-            'manage_template'=>1,
-            'manage_label'=>1
-            ));
-        } catch (Exception $e) {
-            $aErrors[] = $e;
-        }
-
-        if (count($aErrors)>0) {
-            echo "There were errors during the installation.\n";
-            foreach ($aErrors as $sError) {
-                echo "Error: " . $sError . "\n";
-            }
-        } else {
-            echo "Installation was successful.\n";
-
         }
     }
 

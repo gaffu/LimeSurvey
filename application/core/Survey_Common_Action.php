@@ -25,7 +25,14 @@
 */
 class Survey_Common_Action extends CAction
 {
+    public function __construct($controller, $id)
+    {
+        parent::__construct($controller, $id);
 
+        // Make sure viewHelper can be autoloaded
+        Yii::import('application.helpers.viewHelper');
+    }
+    
     /**
     * Override runWithParams() implementation in CAction to help us parse
     * requests with subactions.
@@ -897,8 +904,13 @@ class Survey_Common_Action extends CAction
         Yii::app()->loadHelper('database');
 
         if (!empty($ugid)) {
-            $grpquery = "SELECT gp.* FROM {{user_groups}} AS gp, {{user_in_groups}} AS gu WHERE gp.ugid=gu.ugid AND gp.ugid = $ugid AND gu.uid=" . Yii::app()->session['loginID'];
-            $grpresult = Yii::app()->db->createCommand($grpquery)->queryRow();  //Checked
+            $sQuery = "SELECT gp.* FROM {{user_groups}} AS gp, {{user_in_groups}} AS gu WHERE gp.ugid=gu.ugid AND gp.ugid = {$ugid}";
+            if (!hasGlobalPermission('USER_RIGHT_SUPERADMIN'))
+            {
+                $sQuery .=" AND gu.uid = ".Yii::app()->session['loginID'];
+            }
+            
+            $grpresult = Yii::app()->db->createCommand($sQuery)->queryRow();  //Checked
 
             if ($grpresult) {
                 $grpresultcount=1;

@@ -403,7 +403,7 @@ class question extends Survey_Common_Action {
         $aData['qid'] = $qid = sanitize_int($qid);
 
         $this->getController()->_js_admin_includes(Yii::app()->getConfig('generalscripts') . 'jquery/jquery.dd.js');
-        $this->getController()->_js_admin_includes(Yii::app()->getConfig('generalscripts') . 'admin/subquestions.js');
+        $this->getController()->_js_admin_includes(Yii::app()->getConfig('adminscripts') . 'subquestions.js');
         $this->getController()->_js_admin_includes(Yii::app()->getConfig('generalscripts') . 'jquery/jquery.blockUI.js');
         $this->getController()->_js_admin_includes(Yii::app()->getConfig('generalscripts') . 'jquery/jquery.selectboxes.min.js');
         $this->getController()->_css_admin_includes(Yii::app()->getConfig('generalscripts') . 'jquery/dd.css');
@@ -773,8 +773,8 @@ class question extends Survey_Common_Action {
                 $baselang = Survey::model()->findByPk($surveyid)->language;
                 $oqresult = Questions::model()->findAllByAttributes(array('sid' => $surveyid, 'gid' => $gid, 'language' => $baselang, 'parent_qid' => 0), array('order' => 'question_order'));
                 $aData['oqresult'] = $oqresult;
-                $this->getController()->_js_admin_includes(Yii::app()->getConfig('adminscripts') . 'questions.js');
             }
+            $this->getController()->_js_admin_includes(Yii::app()->getConfig('adminscripts') . 'questions.js');
 
             $aViewUrls['editQuestion_view'][] = $aData;
             $aViewUrls['questionJavascript_view'][] = array('type' => $eqrow['type']);
@@ -819,11 +819,12 @@ class question extends Survey_Common_Action {
                 }
                 if (isset($qidarray))
                     $qidlist = implode(", ", $qidarray);
-                $message = $clang->gT("Question could not be deleted. There are conditions for other questions that rely on this question. You cannot delete this question until those conditions are removed.");
-                $message .="<br /><a href='" . $this->getController()->createUrl("admin/expressions/survey_logic_file/sid/{$surveyid}") . "' >" . $clang->gT("Look at survey logic files") . "</a>.";
+                $message =$clang->gT("Question could not be deleted. There are conditions for other questions that rely on this question. You cannot delete this question until those conditions are removed.");
+                $message .="<br /><a href='". $this->getController()->createUrl("admin/expressions/sa/survey_logic_file/sid/{$surveyid}")."' >".$clang->gT("Look at survey logic files")."</a>.";
                 $this->getController()->error(
-                        $message, $this->getController()->createUrl("admin/survey/view/surveyid/{$surveyid}/gid/{$gid}/qid/{$qid}")
-                );
+                    $message,
+                    $this->getController()->createUrl("admin/survey/sa/view/surveyid/{$surveyid}/gid/{$gid}/qid/{$qid}")
+                    );
             }
             else {
                 $row = Questions::model()->findByAttributes(array('qid' => $qid))->attributes;
@@ -853,10 +854,12 @@ class question extends Survey_Common_Action {
 
             Yii::app()->session['flashmessage'] = $clang->gT("Question was successfully deleted.");
 
-            $this->getController()->redirect($this->getController()->createUrl('admin/survey/view/surveyid/' . $surveyid . '/gid/' . $gid));
-        } else {
+            $this->getController()->redirect($this->getController()->createUrl('admin/survey/sa/view/surveyid/' . $surveyid . '/gid/' . $gid));
+        }
+        else
+        {
             Yii::app()->session['flashmessage'] = $clang->gT("You are not authorized to delete questions.");
-            $this->getController()->redirect($this->getController()->createUrl('admin/survey/view/surveyid/' . $surveyid . '/gid/' . $gid));
+            $this->getController()->redirect($this->getController()->createUrl('admin/survey/sa/view/surveyid/' . $surveyid . '/gid/' . $gid));
         }
     }
 
@@ -918,14 +921,14 @@ class question extends Survey_Common_Action {
         $labelsetlanguages = explode(' ', $labelsetdata->languages);
         foreach ($labelsetlanguages as $language) {
 
-            //$query='select * from lime_labels where lid='.$lid." and language='{$language}' order by sortorder";
-            $criteria = new CDbCriteria;
-            $criteria->condition = 'lid=:lid and language=:language';
-            $criteria->params = array(':lid' => $lid, ':language' => $language);
-            $criteria->order = 'sortorder';
-            $labelsdata = Label::model()->findAll($criteria);
-            $i = 0;
-            foreach ($labelsdata as $labeldata) {
+            $criteria=new CDbCriteria;
+            $criteria->condition='lid=:lid and language=:language';
+            $criteria->params=array(':lid'=>$lid, ':language'=>$language);
+            $criteria->order='sortorder';
+            $labelsdata=Label::model()->findAll($criteria);
+            $i=0;
+            foreach($labelsdata as $labeldata)
+            {
                 $data[$i]['lid'] = $labeldata->lid;
                 $data[$i]['code'] = $labeldata->code;
                 $data[$i]['title'] = $labeldata->title;
@@ -961,15 +964,17 @@ class question extends Survey_Common_Action {
     }
 
     /**
-     * Load preview of a question screen.
-     *
-     * @access public
-     * @param int $surveyid
-     * @param int $qid
-     * @param string $lang
-     * @return void
-     */
-    public function preview($surveyid, $qid, $lang = null) {
+    * Load preview of a question screen.
+    *
+    * @access public
+    * @param int $surveyid
+    * @param int $qid
+    * @param string $lang
+    * @return void
+    * @deprecated THIS IS OBSOLETE AS QUESTION PREVIEW IS NOW HANDLED BY controllers/survey/index.php
+    */
+    public function preview($surveyid, $qid, $lang = null)
+    {
         $surveyid = sanitize_int($surveyid);
         $qid = sanitize_int($qid);
         $LEMdebugLevel = 0;
@@ -1154,7 +1159,7 @@ EOD;
 
         $redata = compact(array_keys(get_defined_vars()));
         $content = templatereplace(file_get_contents("$thistpl/startpage.pstpl"), array(), $redata);
-        $content .='<form method="post" action="index.php" id="limesurvey" name="limesurvey" autocomplete="off">';
+        $content .= CHtml::form('index.php', 'post', array('id'=>"limesurvey",'name'=>"limesurvey",'autocomplete'=>'off'));
         $content .= templatereplace(file_get_contents("$thistpl/startgroup.pstpl"), array(), $redata);
 
         $question_template = file_get_contents("$thistpl/question.pstpl");

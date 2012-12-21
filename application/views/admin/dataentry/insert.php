@@ -3,7 +3,7 @@
 		<br />
 		<?php if(isset($save) && $errormsg): ?>
 		<?php $clang->eT("Try again"); ?>:
-		<form method='post'>
+        <?php echo CHtml::form();?>
 			<table class='outlinetable'>
 			  	<tr>
 			   		<td align='right'><?php $clang->eT("Identifier:"); ?></td>
@@ -30,7 +30,7 @@
 			   		</td>
 			   	</tr>
 			  	<tr>
-			  		<td align='right'><?php $clang->eT("Start Language:"); ?></td>
+			  		<td align='right'><?php $clang->eT("Start language:"); ?></td>
 			   		<td>
 			   			<input type='text' name='save_language' value='<?php echo $_POST['save_language']; ?>' />
 			   		</td>
@@ -78,11 +78,11 @@
 
 		<input type='submit' value='<?php $clang->eT("Add another record"); ?>' onclick="window.open('<?php echo $this->createUrl('/admin/dataentry/view/surveyid/'.$surveyid.'/lang/'.$lang); ?>', '_top')" />
 		<br /><br />
-        <input type='submit' value='<?php $clang->eT("Return to survey administration"); ?>' onclick="window.open('<?php echo $this->createUrl('/admin/survey/view/surveyid/'.$surveyid); ?>', '_top')" />
+        <input type='submit' value='<?php $clang->eT("Return to survey administration"); ?>' onclick="window.open('<?php echo $this->createUrl('admin/survey/sa/view/surveyid/'.$surveyid); ?>', '_top')" />
         <br /><br />
 
         <?php if(isset($thisid)): ?>
-			<input type='submit' value='<?php $clang->eT("View this record"); ?>' onclick="window.open('<?php echo $this->createUrl('/admin/responses/action/surveyid/'.$surveyid.'/id/'.$thisid); ?>', '_top')" />
+			<input type='submit' value='<?php $clang->eT("View this record"); ?>' onclick="window.open('<?php echo $this->createUrl('/admin/responses/sa/action/surveyid/'.$surveyid.'/id/'.$thisid); ?>', '_top')" />
 			<br /><br />
         <?php endif; ?>
 

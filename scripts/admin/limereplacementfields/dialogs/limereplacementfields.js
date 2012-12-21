@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
  * For licensing, see LICENSE.html or http://ckeditor.com/license
  */
@@ -13,7 +13,7 @@
 			title : lang.title,
 			minWidth : 300,
 			minHeight : 80,
-			height : 'auto',
+			height : 200,
 			resizable : CKEDITOR.DIALOG_RESIZE_NONE,
 			contents :
 			[
@@ -55,6 +55,16 @@
 					this._element = CKEDITOR.plugins.limereplacementfields.getSelectedPlaceHoder( editor );
 
 				this.setupContent( this._element );
+				
+				if($('#cquestions option:first').width() == 0) { // IE7 hack
+					var maxW = 0;
+					$('#cquestions option').wrapInner('<span />').each(function(i){
+						if($('span', this).outerWidth() > maxW){
+							maxW = $('span', this).outerWidth();
+						}
+					});
+					$('#cquestions').width(maxW + 60);
+				}
 			},
 			onOk : function()
 			{

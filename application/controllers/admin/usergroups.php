@@ -42,11 +42,9 @@ class Usergroups extends Survey_Common_Action
 
         if ($action == "mailsendusergroup") {
 
-            // user must be in user group
-            // or superadmin
+            // user must be in user group or superadmin
             $result = User_in_groups::model()->findAllByPk(array('ugid' => $ugid, 'uid' => Yii::app()->session['loginID']));
-
-            if (count($result) > 0 || Yii::app()->session['loginID'] == 1)
+            if (count($result) > 0 || Yii::app()->session['USER_RIGHT_SUPERADMIN'])
             {
                 $criteria = new CDbCriteria;
                 $criteria->compare('ugid',$ugid)->addNotInCondition('users.uid',array(Yii::app()->session['loginID']));
@@ -147,8 +145,6 @@ class Usergroups extends Survey_Common_Action
                     if ($result->count() > 0) {  // OK - AR count
                         $delquery_result = User_groups::model()->deleteGroup($ugid, Yii::app()->session["loginID"]);
 
-                        // $del_user_in_groups_query = "DELETE FROM {{user_in_groups}} WHERE ugid=$ugid AND uid=".Yii::app()->session['loginID'];
-
                         if ($delquery_result) //Checked)
                         {
                             list($aViewUrls, $aData) = $this->index(false, array("type" => "success", "message" => $clang->gT("Success!")));
@@ -229,20 +225,19 @@ class Usergroups extends Survey_Common_Action
         if (Yii::app()->session['USER_RIGHT_SUPERADMIN'] == 1) {
             if ($action == "editusergroupindb") {
 
-                $ugid = $_POST['ugid'];
+                $ugid = (int)$_POST['ugid'];
 
                 $db_name = $_POST['name'];
                 $db_description = $_POST['description'];
                 if (User_groups::model()->updateGroup($db_name, $db_description, $ugid)) {
                     Yii::app()->session['flashmessage'] = $clang->gT("User group successfully saved!");
 					$aData['ugid'] = $ugid;
-					list($aViewUrls) = $this->index($ugid);
+                    Yii::app()->request->redirect($this->getController()->createUrl('admin/usergroups/view/ugid/'.$ugid));
                 }
                 else
                 {
-                    $headercfg["message"] = $clang->gT("Failed to edit user group!");
-                    $headercfg["type"] = "warning";
-                    list($aViewUrls, $aData) = $this->index($ugid, $headercfg);
+                    Yii::app()->session['flashmessage'] = $clang->gT("Failed to edit user group!");
+                    Yii::app()->request->redirect($this->getController()->createUrl('admin/usergroups/edit/ugid/'.$ugid));
                 }
 
             }
@@ -255,7 +250,7 @@ class Usergroups extends Survey_Common_Action
             }
         }
 
-        $this->_renderWrappedTemplate('usergroup', $aViewUrls, $aData);
+        $this->_renderWrappedTemplate('usergroup', 'editUserGroup_view', $aData);
     }
 
 
@@ -298,33 +293,38 @@ class Usergroups extends Survey_Common_Action
                 //$this->user_in_groups_model = new User_in_groups;
                 $eguquery = "SELECT * FROM {{user_in_groups}} AS a INNER JOIN {{users}} AS b ON a.uid = b.uid WHERE ugid = " . $ugid . " ORDER BY b.users_name";
                 $eguresult = dbExecuteAssoc($eguquery);
+                $aUserInGroupsResult = $eguresult->readAll();
                 $query2 = "SELECT ugid FROM {{user_groups}} WHERE ugid = " . $ugid . " AND owner_id = " . Yii::app()->session['loginID'];
                 $result2 = dbSelectLimitAssoc($query2, 1);
                 $row2 = $result2->readAll();
                 $row = 1;
                 $userloop = array();
                 $bgcc = "oddrow";
-                foreach ($eguresult->readAll() as $egurow)
+                foreach ($aUserInGroupsResult as $egurow)
                 {
-                    if ($bgcc == "evenrow")
+                    if ($bgcc == "evenrow") {
                         $bgcc = "oddrow";
-                    else
+                    } else {
                         $bgcc = "evenrow";
+                    }
                     $userloop[$row]["userid"] = $egurow['uid'];
                     if ($egurow['uid'] == $crow['owner_id']) {
                         $userloop[$row]["username"] = "<strong>{$egurow['users_name']}</strong>";
                         $userloop[$row]["email"] = "<strong>{$egurow['email']}</strong>";
                         $userloop[$row]["rowclass"] = $bgcc;
                         $userloop[$row]["displayactions"] = false;
-                        continue;
-                    }
-                    //	output users
-                    $userloop[$row]["rowclass"] = $bgcc;
-                    if (Yii::app()->session['USER_RIGHT_SUPERADMIN'] == 1)
-                        $userloop[$row]["displayactions"] = true;
+                    } else {
+                        //	output users
+                        $userloop[$row]["rowclass"] = $bgcc;
+                        if (Yii::app()->session['USER_RIGHT_SUPERADMIN'] == 1) {
+                            $userloop[$row]["displayactions"] = true;
+                        } else {
+                            $userloop[$row]["displayactions"] = false;
+                        }
 
-                    $userloop[$row]["username"] = $egurow['users_name'];
-                    $userloop[$row]["email"] = $egurow['email'];
+                        $userloop[$row]["username"] = $egurow['users_name'];
+                        $userloop[$row]["email"] = $egurow['email'];
+                    }
                     $row++;
                 }
                 $aData["userloop"] = $userloop;
@@ -420,6 +420,7 @@ class Usergroups extends Survey_Common_Action
     protected function _renderWrappedTemplate($sAction = 'usergroup', $aViewUrls = array(), $aData = array())
     {
         $this->getController()->_css_admin_includes(Yii::app()->getConfig('adminstyleurl')."superfish.css");
+        $this->getController()->_js_admin_includes(Yii::app()->getConfig('generalscripts') . 'jquery/jquery.tablesorter.min.js');
         $this->getController()->_js_admin_includes(Yii::app()->getConfig('adminscripts').'users.js');
 
         $aData['display']['menu_bars']['user_group'] = true;

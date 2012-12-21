@@ -69,7 +69,7 @@ class quotas extends Survey_Common_Action
 
     function _redirectToIndex($iSurveyId)
     {
-        $this->getController()->redirect($this->getController()->createUrl("/admin/quotas/index/surveyid/$iSurveyId"));
+        $this->getController()->redirect($this->getController()->createUrl("/admin/quotas/sa/index/surveyid/$iSurveyId"));
     }
 
     function index($iSurveyId, $quickreport = false)
@@ -176,7 +176,7 @@ class quotas extends Survey_Common_Action
         $oQuota->action = Yii::app()->request->getPost('quota_action');
         $oQuota->autoload_url = Yii::app()->request->getPost('autoload_url');
         $oQuota->save();
-        $iQuotaId = Yii::app()->db->lastInsertID;
+        $iQuotaId = $oQuota->id;
 
         //Iterate through each language, and make sure there is a quota message for it
         $sError = '';

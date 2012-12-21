@@ -494,29 +494,25 @@ class statistics extends Survey_Common_Action {
 
 	}
 
-    /* Returns a simple list of values in a particular column, that meet the
-     * requirements of the SQL
-     *
-     * */
+    
+    /**
+    *  Returns a simple list of values in a particular column, that meet the requirements of the SQL
+    */
     function listcolumn($surveyid, $column, $sortby="", $sortmethod="", $sorttype="")
     {
-        $search['condition']=$column." != ''";
-        if($sql != "") {$search['condition'].= " AND ($sql)";}
-        if($sorttype=='N') {$sortby = "($sortby * 1)";} //Converts text sorting into numerical sorting
-        if($sortby != "") $search['order']=$sortby.' '.$sortmethod;
-        $results=Survey_dynamic::model($surveyid)->findAll($search);
-        foreach($results as $row) {
-            $output[]=array("id"=>$row['id'], "value"=>$row[$column]);
-        }
+        Yii::app()->loadHelper('admin/statistics');
+        $helper = new statistics_helper();
+        $output = $helper->_listcolumn($surveyid, $column, $sortby, $sortmethod, $sorttype);
         $aData['surveyid']=$surveyid;
         $aData['data']=$output;
         $aData['column']=$column;
         $aData['sortby']=$sortby;
         $aData['sortmethod']=$sortmethod;
         $aData['sorttype']=$sorttype;
-        $this->getController()->render('export/statistics_browse_view', $aData);
+        $this->getController()->render('export/statistics_browse_view', $aData);    
     }
-
+    
+    
 	function graph()
 	{
         Yii::app()->loadHelper('admin/statistics');
@@ -526,15 +522,23 @@ class statistics extends Survey_Common_Action {
         require_once(Yii::app()->basePath . '/third_party/pchart/pchart/pChart.class');
         require_once(Yii::app()->basePath . '/third_party/pchart/pchart/pData.class');
         require_once(Yii::app()->basePath . '/third_party/pchart/pchart/pCache.class');
+
+
+        Yii::import('application.third_party.ar-php.Arabic', true);
+        
         $tempdir = Yii::app()->getConfig("tempdir");
         $MyCache = new pCache($tempdir.'/');
-
 	    $aData['success'] = 1;
-
+        $sStatisticsLanguage=sanitize_languagecode($_POST['sStatisticsLanguage']);
+        $oStatisticsLanguage = new Limesurvey_lang($sStatisticsLanguage);        
 	    if (isset($_POST['cmd']) && isset($_POST['id'])) {
 	        list($qsid, $qgid, $qqid) = explode("X", substr($_POST['id'], 0), 3);
+            if(!is_numeric(substr($qsid,0,1))) {
+                // Strip first char when not numeric (probably T or D)
+                $qsid=substr($qsid,1);
+            }
 	        $qtype = substr($_POST['id'], 0, 1);
-            $aattr = getQuestionAttributeValues($qqid, substr($_POST['id'], 0, 1));
+            $aattr = getQuestionAttributeValues($qqid);
             $field = substr($_POST['id'], 1);
 
 	        switch ($_POST['cmd']) {
@@ -573,7 +577,7 @@ class statistics extends Survey_Common_Action {
                     $bChartType = $qtype != "M" && $qtype != "P" && $aattr["statistics_graphtype"] == "1";
 
                     $adata = Yii::app()->session['stats'][$_POST['id']];
-	                $aData['chartdata'] = createChart($qqid, $qsid, $bChartType, $adata['lbl'], $adata['gdata'], $adata['grawdata'], $MyCache);
+	                $aData['chartdata'] = createChart($qqid, $qsid, $bChartType, $adata['lbl'], $adata['gdata'], $adata['grawdata'], $MyCache, $oStatisticsLanguage);
 
 
                     Question_attributes::model()->setAttribute($qqid, 'statistics_showgraph', 1);
@@ -590,7 +594,7 @@ class statistics extends Survey_Common_Action {
                     Question_attributes::model()->setAttribute($qqid, 'statistics_graphtype', 0);
 
                     $adata = Yii::app()->session['stats'][$_POST['id']];
-	                $aData['chartdata'] =  createChart($qqid, $qsid, 0, $adata['lbl'], $adata['gdata'], $adata['grawdata'], $MyCache);
+	                $aData['chartdata'] =  createChart($qqid, $qsid, 0, $adata['lbl'], $adata['gdata'], $adata['grawdata'], $MyCache, $oStatisticsLanguage);
 
 	                break;
 	            case 'showpie':
@@ -603,7 +607,7 @@ class statistics extends Survey_Common_Action {
                     Question_attributes::model()->setAttribute($qqid, 'statistics_graphtype', 1);
 
                     $adata = Yii::app()->session['stats'][$_POST['id']];
-	                $aData['chartdata'] =  createChart($qqid, $qsid, 1, $adata['lbl'], $adata['gdata'], $adata['grawdata'], $MyCache);
+	                $aData['chartdata'] =  createChart($qqid, $qsid, 1, $adata['lbl'], $adata['gdata'], $adata['grawdata'], $MyCache, $oStatisticsLanguage);
 
 
 	                break;

@@ -20,15 +20,15 @@
             $clang->eT("Do you want to create a token table for this survey?");
         ?>
         <br /><br />
-        <input type='submit' value='<?php $clang->eT("Initialise tokens"); ?>' onclick="<?php echo convertGETtoPOST($this->createUrl("admin/tokens/index/surveyid/$surveyid") . "?action=tokens&amp;sid=$surveyid&amp;createtable=Y"); ?>" />
-        <input type='submit' value='<?php $clang->eT("No, thanks."); ?>' onclick="window.open('<?php echo$this->createUrl("admin/survey/view/surveyid/$surveyid"); ?>', '_top')" /></div>
+        <input type='submit' value='<?php $clang->eT("Initialise tokens"); ?>' onclick="window.open('<?php echo $this->createUrl("admin/tokens/sa/index/surveyid/$surveyid/createtable/Y"); ?>', '_top')" />
+        <input type='submit' value='<?php $clang->eT("No, thanks."); ?>' onclick="window.open('<?php echo$this->createUrl("admin/survey/sa/view/surveyid/$surveyid"); ?>', '_top')" /></div>
     <?php
     }
     else
     {
         $clang->eT("You don't have the permission to activate tokens.");
     ?>
-    <input type='submit' value='<?php $clang->eT("Back to main menu"); ?>' onclick="window.open('<?php echo $this->createUrl("admin/survey/view/surveyid/$surveyid"); ?>', '_top')" /></div>
+    <input type='submit' value='<?php $clang->eT("Back to main menu"); ?>' onclick="window.open('<?php echo $this->createUrl("admin/survey/sa/view/surveyid/$surveyid"); ?>', '_top')" /></div>
 
     <?php
     }
@@ -39,7 +39,7 @@
     ?>
     <br /><div class='header ui-widget-header'><?php $clang->eT("Restore options"); ?></div>
     <div class='messagebox ui-corner-all'>
-        <form method='post' action='<?php echo $this->createUrl("admin/tokens/index/surveyid/$surveyid"); ?>'>
+        <?php echo CHtml::form(array("admin/tokens/sa/index/surveyid/{$surveyid}"), 'post'); ?>
             <?php $clang->eT("The following old token tables could be restored:"); ?><br /><br />
             <select size='4' name='oldtable' style='width:250px;'>
                 <?php
@@ -56,14 +56,6 @@
     <?php } ?>
 <script type="text/javascript">
     <!--
-    for(i=0; i<document.forms.length; i++)
-        {
-        var el = document.createElement('input');
-        el.type = 'hidden';
-        el.name = 'checksessionbypost';
-        el.value = 'cvtp4rts86';
-        document.forms[i].appendChild(el);
-    }
 
     function addHiddenElement(theform,thename,thevalue)
     {
@@ -85,7 +77,6 @@
             {
             addHiddenElement(myform,arrayparam[i],arrayval[i])
         }
-        addHiddenElement(myform,'checksessionbypost',checkcode)
         myform.submit();
     }
 

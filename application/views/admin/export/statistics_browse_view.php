@@ -39,12 +39,12 @@ $clang = Yii::app()->lang;
 foreach ($data as $row) {
 ?>
 <div class='statisticscolumnid'>
-    <a href='<?php echo Yii::app()->getController()->createUrl("admin/responses/view/surveyid/".$surveyid."/id/".$row['id']); ?>' target='_blank'>
+    <a href='<?php echo Yii::app()->getController()->createUrl("admin/responses/sa/view/surveyid/".$surveyid."/id/".$row['id']); ?>' target='_blank'>
         <img src='<?php echo Yii::app()->getConfig('adminimageurl') . "/search.gif" ?>' title='<?php $clang->eT("View response"); ?>'/>
     </a>
 </div>
 <div class='statisticscolumndata'>
-    <?php echo stripslashes($row['value']) ?>
+    <?php echo sanitize_html_string($row['value']) ?>
 </div>
 <div style='clear: both'></div>
 <?php

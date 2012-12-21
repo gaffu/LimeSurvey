@@ -19,7 +19,7 @@ elseif (empty($ldap_queries) || !is_array($ldap_queries) || count($ldap_queries)
 else
 {
 ?>
-<form method='post' action='<?php echo $this->createUrl("admin/tokens/importldap/surveyid/$iSurveyId"); ?>'>
+<?php echo CHtml::form(array("admin/tokens/sa/importldap/surveyid/{$iSurveyId}"), 'post'); ?>
     <p>
         <?php $clang->eT("Select the LDAP query you want to run:"); ?> <select name='ldapQueries'>
         <?php foreach ($ldap_queries as $q_number => $q) { ?>
@@ -29,11 +29,11 @@ else
     </p>
     <p>
         <label for='filterblankemail'><?php echo $clang->eT("Filter blank email addresses:"); ?></label>
-        <input type='checkbox' id='filterblankemail' checked='checked' />
+        <input type='checkbox' id='filterblankemail' name='filterblankemail' checked='checked' />
     </p>
     <p>
         <label for='filterduplicatetoken'><?php echo $clang->eT("Filter duplicate records:"); ?></label>
-        <input type='checkbox' id='filterduplicatetoken' checked='checked' />
+        <input type='checkbox' id='filterduplicatetoken' name='filterduplicatetoken' checked='checked' />
     </p>
     <input type='hidden' name='subaction' value='uploadldap' />
     <p><input type='submit' name='submit' /></p>

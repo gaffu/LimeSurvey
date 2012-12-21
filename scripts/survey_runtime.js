@@ -99,6 +99,7 @@ $(document).ready(function()
 function navbuttonsJqueryUi(){
     if ($.browser.msie && $.browser.version.substr(0,1)<8 && $('button.submit').length > 0) { // Get rid of the focus outline in IE7
         $('#movenextbtn, #movesubmitbtn').focus().blur(); 
+        $(this).scrollTop(0); 
     }
 
     $('[dir!="rtl"] #moveprevbtn').button({
@@ -501,7 +502,8 @@ function navigator_countdown_end()
 	navigator_countdown_btn().each(function(i, e)
 	{
 		e.value = $(e).data('text');
-		$(e).attr('disabled', '');
+        $(e).button("option", "disabled", false);
+        $(e).attr('aria-disabled','false');
 	});
 	$(window).data('countdown', null);
 }
@@ -514,9 +516,9 @@ function navigator_countdown_int()
 		navigator_countdown_btn().each(function(i, e)
 		{
 			e.value = $(e).data('text');
-
-                        // just count-down for delays longer than 1 second
-                        if(n > 1) e.value += " (" + n + ")";
+            $(e).find('.ui-button-text').html( $(e).data('text'));
+            // just count-down for delays longer than 1 second
+            if(n > 1) $(e).find('.ui-button-text').html( $(e).data('text')+ " (" + n + ")");
 		});
 
 		$(window).data('countdown', --n);

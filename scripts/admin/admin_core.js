@@ -633,76 +633,34 @@ function htmlspecialchars (string, quote_style, charset, double_encode) {
     return string;
 }
 
+jQuery.fn.center = function () {
+    this.css("position","absolute");
+    this.css("top", ( $(window).height() - this.height() ) / 2+$(window).scrollTop() + "px");
+    this.css("left", ( $(window).width() - this.width() ) / 2+$(window).scrollLeft() + "px");
+    return this;
+}
 
-function saveaslabelset()
+// Fix broken substr function with negative start value (in older IE)
+if ('ab'.substr(-1) != 'b') {
+	String.prototype.substr = function(substr) {
+		return function(start, length) {
+			if (start < 0) start = this.length + start;
+			return substr.call(this, start, length);
+		}
+	}(String.prototype.substr);
+}
+
+/**
+* Yii CSRF protection divs breaks this script so this function moves the 
+* hidden CSRF field out of the div and remove it if needed
+* 
+*/
+function removeCSRFDivs()
 {
-    var lang = langs.split(";");
-
-
-    dataToSend = {};
-    dataToSend['langs'] = lang;
-    dataToSend['codelist'] = [];
-    $(".answertable:first tbody tr").each(function(i,e){
-        code = $(".code",e).attr('id');
-        code = code.split("_");
-        code = code[1];
-
-        dataToSend['codelist'].push(code);
-        var assessment_val = '0';
-        if ($("#assessment_"+code+"_0").length != 0 ){
-            assessment_val = $("#assessment_"+code+"_0").val();
-        }
-        dataToSend[code] =  {
-            code: $("#code_"+code+"_0").val(),
-            assessmentvalue: assessment_val
-        };
-        $(lang).each(function(index,element){
-            dataToSend[code]['text_'+element] = $("#answer_"+element+"_"+code+"_0").val();
-
-        });
-    });
-
-    var label_name = prompt("Enter new label name", "");
-
-    var data = {
-        action: 'ajaxmodlabelsetanswers',
-        lid:'1',
-        dataToSend:js2php(dataToSend),
-        ajax:'1',
-        label_name:label_name,
-        languageids: dataToSend['langs'].join(" "),
-        checksessionbypost: $("[name=checksessionbypost]").val()
-    }
-
-    $.ajax({
-        type: 'POST',
-        url: 'admin.php',
-        data: data,
-        success: function(){
-            alert("Label successfully created");
-        }
+    $('input[name=YII_CSRF_TOKEN]').each(function(){
+       parent = $(this).parent();
+       grandfather = $(parent).parent();
+       grandfather.append(this);
+       parent.remove();
     });
 }
-
-
-function js2php(object){
-    var json = "{";
-    for (property in object){
-        var value = object[property];
-        if (typeof(value)=="string"){
-            json += '"'+property+'":"'+value.replace(/[\\"']/g, '\\$&')+'",'
-        }
-        else{
-            if (!value[0]){
-                json += '"'+property + '":'+js2php(value)+',';
-            }
-            else{
-                json += '"' + property + '":[';
-                for (prop in value) json += '"'+value[prop]+'",';
-                json = json.substr(0,json.length-1)+"],";
-            }
-        }
-    }
-    return json.substr(0,json.length-1)+ "}";
-}
-

@@ -46,7 +46,7 @@ if (isset($attributes) && count($attributes) > 0)
     foreach ($attributes as $row)
     {
         $attnames[] = '"' . $row['attribute_name'] . '"';
-        $uidNames[] = '{ "name": "' . $row['attribute_name'] . '", "index":"' . $row['attribute_id'] . '", "sorttype":"string", "sortable": true, "align":"center"}';
+        $uidNames[] = '{ "name": "' . $row['attribute_name'] . '", "index":"a' . $row['attribute_id'] . '", "sorttype":"string", "sortable": true, "align":"center"}';
     }
     $columnNames = ',' . implode(",", $attnames) . ''; //Add to the end of the standard list of columnNames
     if(count($attributes) > 5) $autowidth='false';
@@ -59,6 +59,11 @@ else
 ?>
 <script type="text/javascript">
     /* Search form titles */
+    var sLoadText = '<?php $clang->eT("Loading...",'js');?>';
+    var sAddCaption = "<?php $clang->eT("Add participant", 'js') ?>";
+    var sAddButtonCaption = "<?php $clang->eT("Add", 'js') ?>";
+    var sDeleteButtonCaption = "<?php $clang->eT("Delete", 'js') ?>";
+    var sCancel = "<?php $clang->eT("Cancel", 'js') ?>";
     var fullSearchTitle = "<?php $clang->eT("Full search"); ?>";
     var selectTxt="<?php $clang->eT("Select...") ?>";
     var emailTxt="<?php $clang->eT("Email") ?>";
@@ -89,7 +94,7 @@ else
     var dateAddedColTxt="<?php $clang->eT("Date added", 'js') ?>";
     var dateInvitedColTxt="<?php $clang->eT("Last invited", 'js') ?>";
     var dateCompletedColTxt="<?php $clang->eT("Submitted", 'js') ?>";
-    var surveylinkUrl = "<?php echo Yii::app()->getController()->createUrl("admin/participants/getSurveyInfo_json/pid/"); ?>";
+    var surveylinkUrl = "<?php echo Yii::app()->getController()->createUrl("admin/participants/sa/getSurveyInfo_json/pid/"); ?>";
 
     /* Colnames and heading for attributes subgrid */
     var attributesHeadingTxt="<?php $clang->eT("Participant's attribute information", 'js') ?>";
@@ -106,6 +111,7 @@ else
     var refreshListTxt="<?php $clang->eT("Refresh list", 'js') ?>";
     var pageViewTxt= "<?php $clang->eT("Page {0} of {1}", 'js') ?>";
     var viewRecordTxt= '<?php $clang->eT("View {0} - {1} of {2}",'js');?>';
+    var participantsTxt= '<?php $clang->eT("Participants",'js');?>';
     var emptyRecordsTxt= "<?php $clang->eT("No participants to view", 'js') ?>";
 
     var resetBtn = "<?php $clang->eT("Reset", 'js'); ?>";
@@ -136,32 +142,32 @@ else
     var deletefrompanel = "<?php $clang->eT("Delete participant(s) from central participants panel only", 'js') ?>";
     var deletefrompanelandtoken = "<?php $clang->eT("Delete participant(s) from central panel and tokens tables", 'js') ?>";
     var deletefrompaneltokenandresponse = "<?php $clang->eT("Delete participant(s) from central panel, tokens tables and all associated responses", 'js') ?>";
-    var deleteMsg = "<br/>"+deletefrompanelmsg+"<br/><br/><center><ol id='selectable' class='selectable' ><li class='ui-widget-content' id='po'>"+deletefrompanel+"</li><li class='ui-widget-content' id='ptt'>"+deletefrompanelandtoken+"</li><li class='ui-widget-content' id='ptta'>"+deletefrompaneltokenandresponse+"</li></ol></center>";
+    var deleteMsg = "<br/>"+deletefrompanelmsg+"<br/><br/><ol id='selectable' class='selectable' ><li class='ui-widget-content' id='po'>"+deletefrompanel+"</li><li class='ui-widget-content' id='ptt'>"+deletefrompanelandtoken+"</li><li class='ui-widget-content' id='ptta'>"+deletefrompaneltokenandresponse+"</li></ol>";
     var searchBtn = "<?php $clang->eT("Search", 'js') ?>";
     var shareMsg = "<?php $clang->eT("You can see and edit settings for shared participants in share panel.", 'js') ?>"; //PLEASE REVIEW
-    var jsonUrl = "<?php echo Yii::app()->getController()->createUrl("admin/participants/".$urlsearch); ?>";
-    var jsonSearchUrl = "<?php echo Yii::app()->getController()->createUrl("admin/participants/getParticipantsResults_json/search/"); ?>";
-    var editUrl = "<?php echo Yii::app()->getController()->createUrl("admin/participants/editParticipant"); ?>";
+    var jsonUrl = "<?php echo Yii::app()->getController()->createUrl("admin/participants/sa/".$urlsearch); ?>";
+    var jsonSearchUrl = "<?php echo Yii::app()->getController()->createUrl("admin/participants/sa/getParticipantsResults_json/search/"); ?>";
+    var editUrl = "<?php echo Yii::app()->getController()->createUrl("admin/participants/sa/editParticipant"); ?>";
     var autowidth = "<?php echo $autowidth ?>";
-    var getSearchIDs = "<?php echo Yii::app()->getController()->createUrl("admin/participants/getSearchIDs"); ?>";
-    var getaddtosurveymsg = "<?php echo Yii::app()->getController()->createUrl("admin/participants/getaddtosurveymsg"); ?>";
+    var getSearchIDs = "<?php echo Yii::app()->getController()->createUrl("admin/participants/sa/getSearchIDs"); ?>";
+    var getaddtosurveymsg = "<?php echo Yii::app()->getController()->createUrl("admin/participants/sa/getaddtosurveymsg"); ?>";
     var minusbutton = "<?php echo Yii::app()->getConfig('adminimageurl') . "deleteanswer.png" ?>";
     var imageurl = "<?php echo Yii::app()->getConfig('adminimageurl') ?>";
     var addbutton = "<?php echo Yii::app()->getConfig('adminimageurl') . "plus.png" ?>";
     var minusbuttonTxt = "<?php $clang->eT("Remove search condition", 'js') ?>";
     var addbuttonTxt = "<?php $clang->eT("Add search condition", 'js') ?>";
-    var delparticipantUrl = "<?php echo Yii::app()->getController()->createUrl("admin/participants/delParticipant"); ?>";
-    var getAttribute_json = "<?php echo Yii::app()->getController()->createUrl("admin/participants/getAttribute_json/pid/"); ?>";
-    var exporttocsv = "<?php echo Yii::app()->getController()->createUrl("admin/participants/exporttocsv/id"); ?>";
-    var exporttocsvcount = "<?php echo Yii::app()->getController()->createUrl("admin/participants/exporttocsvcount"); ?>";
-    var getcpdbAttributes_json = "<?php echo Yii::app()->getController()->createUrl("admin/participants/exporttocsvcount"); ?>";
-    var attMapUrl = "<?php echo Yii::app()->getController()->createUrl("admin/participants/attributeMap"); ?>";
-    var editAttributevalue = "<?php echo Yii::app()->getController()->createUrl("admin/participants/editAttributevalue"); ?>";
-    var shareUrl = "<?php echo Yii::app()->getController()->createUrl("admin/participants/shareParticipants"); ?>";
-    var surveyUrl = "<?php echo Yii::app()->getController()->createUrl("admin/participants/addToToken"); ?>";
-    var postUrl = "<?php echo Yii::app()->getController()->createUrl("admin/participants/setSession"); ?>";
+    var delparticipantUrl = "<?php echo Yii::app()->getController()->createUrl("admin/participants/sa/delParticipant"); ?>";
+    var getAttribute_json = "<?php echo Yii::app()->getController()->createUrl("admin/participants/sa/getAttribute_json/pid/"); ?>";
+    var exporttocsv = "<?php echo Yii::app()->getController()->createUrl("admin/participants/sa/exporttocsv/id"); ?>";
+    var exporttocsvcount = "<?php echo Yii::app()->getController()->createUrl("admin/participants/sa/exporttocsvcount"); ?>";
+    var getcpdbAttributes_json = "<?php echo Yii::app()->getController()->createUrl("admin/participants/sa/exporttocsvcount"); ?>";
+    var attMapUrl = "<?php echo Yii::app()->getController()->createUrl("admin/participants/sa/attributeMap"); ?>";
+    var editAttributevalue = "<?php echo Yii::app()->getController()->createUrl("admin/participants/sa/editAttributevalue"); ?>";
+    var shareUrl = "<?php echo Yii::app()->getController()->createUrl("admin/participants/sa/shareParticipants"); ?>";
+    var surveyUrl = "<?php echo Yii::app()->getController()->createUrl("admin/participants/sa/addToToken"); ?>";
+    var postUrl = "<?php echo Yii::app()->getController()->createUrl("admin/participants/sa/setSession"); ?>";
     var ajaxUrl = "<?php echo Yii::app()->getConfig('adminimageurl') . "/ajax-loader.gif" ?>";
-    var redUrl = "<?php echo Yii::app()->getController()->createUrl("admin/participants/displayParticipants"); ?>";
+    var redUrl = "<?php echo Yii::app()->getController()->createUrl("admin/participants/sa/displayParticipants"); ?>";
     var colNames = '["participant_id","can_edit","<?php $clang->eT("First name") ?>","<?php $clang->eT("Last name") ?>","<?php $clang->eT("Email") ?>","<?php $clang->eT("Blacklisted") ?>","<?php $clang->eT("Surveys") ?>","<?php $clang->eT("Language") ?>","<?php $clang->eT("Owner name") ?>"<?php echo $columnNames; ?>]';
     var colModels = '[{ "name":"participant_id", "index":"participant_id", "width":100, "align":"center", "sorttype":"int", "sortable": true, "editable":false, "hidden":true},';
     colModels += '{ "name":"can_edit", "index":"can_edit", "width":10, "align":"center", "sorttype":"int", "sortable": true, "editable":false, "hidden":true},';
@@ -278,11 +284,11 @@ echo CHtml::checkBox('can_edit', TRUE, $data);
 
 <!-- Add To Survey Popup Window -->
 <div class="ui-widget ui-helper-hidden" id="client-script-return-msg" style="display:none">
-    <form action="<?php echo Yii::app()->getController()->createUrl("admin/participants/attributeMap"); ?>" name="addsurvey" id="addsurvey" method="POST">
+    <?php echo CHtml::form(array("admin/participants/sa/attributeMap"), 'post', array('id'=>'addsurvey','name'=>'addsurvey')); ?>
         <input type="hidden" name="participant_id" id="participant_id" value=""></input>
         <input type="hidden" name="count" id="count" value=""></input>
         <div class='popupgroup'>
-            <h4>Participants</h4>
+            <h4><?php $clang->eT("Participants") ?></h4>
             <div id='allinview' style='display: none'><?php $clang->eT("Add all participants in your current list to a survey.") ?></div>
             <div id='selecteditems' style='display: none'><?php $clang->eT("Add the selected participants to a survey.") ?></div>
             <br />

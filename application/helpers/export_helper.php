@@ -46,7 +46,27 @@ function isNumericExtended($value)  {
     return ($eng_or_world);
 }
 
-
+/**
+* Returns splitted unicode string correctly
+* source: http://www.php.net/manual/en/function.str-split.php#107658
+*
+* @param $str
+* @param $l
+* @return string
+*/
+function strSplitUnicode($str, $l = 0) {
+    if ($l > 0) 
+    {
+        $ret = array();
+        $len = mb_strlen($str, "UTF-8");
+        for ($i = 0; $i < $len; $i += $l) 
+        {
+            $ret[] = mb_substr($str, $i, $l, "UTF-8");
+        }
+        return $ret;
+    }
+    return preg_split("//u", $str, -1, PREG_SPLIT_NO_EMPTY);
+}
 
 /**
 * Exports CSV response data for SPSS and R
@@ -65,26 +85,29 @@ function SPSSExportData ($iSurveyID, $iLength, $na = '', $q='\'', $header=FALSE)
     //Now get the query string with all fields to export
     $query = SPSSGetQuery($iSurveyID);
 
-    $result=Yii::app()->db->createCommand($query)->query()->readAll(); //Checked
-    $num_fields = isset($result[0]) ? count($result[0]) : 0;
-
-    //This shouldn't occur, but just to be safe:
-    if (count($fields)<>$num_fields) safeDie("Database inconsistency error");
-    
-    // Add column headers (used by R export)
-    if($header==TRUE)
-    {
-        $i = 1;
-        foreach ($fields as $field) {
-            if (!$field['hide'] ) echo $q.strtoupper($field['sql_name']).$q;
-            if ($i<$num_fields && !$field['hide']) echo ',';
-            $i++;
-        }
-        echo("\n");
-    }
-
+    $result=Yii::app()->db->createCommand($query)->query();
+    $rownr = 0;
 
     foreach ($result as $row) {
+        $rownr++;
+        if ($rownr == 1) {
+            $num_fields = count($row);
+
+            //This shouldn't occur, but just to be safe:
+            if (count($fields)<>$num_fields) safeDie("Database inconsistency error");
+
+            // Add column headers (used by R export)
+            if($header==TRUE)
+            {
+                $i = 1;
+                foreach ($fields as $field) {
+                    if (!$field['hide'] ) echo $q.strtoupper($field['sql_name']).$q;
+                    if ($i<$num_fields && !$field['hide']) echo ',';
+                    $i++;
+                }
+                echo("\n");
+            }            
+        }
         $row = array_change_key_case($row,CASE_UPPER);
         //$row = $result->GetRowAssoc(true);	//Get assoc array, use uppercase
         reset($fields);	//Jump to the first element in the field array
@@ -361,7 +384,7 @@ function SPSSFieldMap($iSurveyID, $prefix = 'V') {
                 $fieldno++;
                 $fields[] = array('id'=>"$prefix$fieldno",'name'=>mb_substr($attributefield, 0, 8),
                 'qid'=>0,'code'=>'','SPSStype'=>'A','LStype'=>'Undef',
-                'VariableLabel'=>$attributedescription,'sql_name'=>$attributefield,'size'=>'100',
+                'VariableLabel'=>$attributedescription['description'],'sql_name'=>$attributefield,'size'=>'100',
                 'title'=>$attributefield,'hide'=>0, 'scale'=>'');
             }
         }
@@ -496,11 +519,11 @@ function SPSSGetQuery($iSurveyID) {
     #See if tokens are being used
     if (isset($tokensexist) && $tokensexist == true && !$bDataAnonymized) {
         $query="SELECT ";
-        $tokenattributes=getTokenFieldsAndNames($iSurveyID,false);
-        foreach ($tokenattributes as $attributefield=>$attributedescription) {
+        $tokenattributes=array_keys(getTokenFieldsAndNames($iSurveyID,false));
+        foreach ($tokenattributes as $attributefield) {
             //Drop the token field, since it is in the survey too
             if($attributefield!='token') {
-                $query .= "t.{$attributefield}, ";
+                $query .= Yii::app()->db->quoteColumnName( 't.' . $attributefield) . ',';
             }
         }
         $query .= "s.*
@@ -578,7 +601,7 @@ function buildXMLFromQuery($xmlwriter, $Query, $tagname='', $excludes = array())
                         $Key=str_replace('#','-',$Key);
                         if (!$xmlwriter->startElement($Key)) safeDie('Invalid element key: '.$Key);
                         // Remove invalid XML characters
-                        if ($Value!='') {
+                        if ($Value!=='') {
                             $Value=str_replace(']]>','',$Value);
                             $xmlwriter->writeCData(preg_replace('/[^\x9\xA\xD\x20-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]/u','',$Value));
                         }
@@ -603,7 +626,7 @@ function buildXMLFromQuery($xmlwriter, $Query, $tagname='', $excludes = array())
 function surveyGetXMLStructure($iSurveyID, $xmlwriter, $exclude=array())
 {
     $sdump = "";
-    if ((!isset($exclude) && $exclude['answers'] !== true) || empty($exclude))
+    if (!isset($exclude['answers']))
     {
         //Answers table
         $aquery = "SELECT {{answers}}.*
@@ -620,7 +643,7 @@ function surveyGetXMLStructure($iSurveyID, $xmlwriter, $exclude=array())
     WHERE {{assessments}}.sid=$iSurveyID";
     buildXMLFromQuery($xmlwriter,$query);
 
-    if ((!isset($exclude) && $exclude['conditions'] !== true) || empty($exclude))
+    if (!isset($exclude['conditions']))
     {
         //Conditions table
         $cquery = "SELECT DISTINCT {{conditions}}.*
@@ -674,7 +697,7 @@ function surveyGetXMLStructure($iSurveyID, $xmlwriter, $exclude=array())
 
     buildXMLFromQuery($xmlwriter,$query,'question_attributes');
 
-    if ((!isset($exclude) && $exclude['quotas'] !== true) || empty($exclude))
+    if (!isset($exclude['quotas']))
     {
         //Quota
         $query = "SELECT {{quota}}.*
@@ -1243,7 +1266,7 @@ function quexml_export($surveyi, $quexmllan)
             }
 
             $response = $dom->createElement("response");
-            $sgq = $iSurveyID . "X" . $gid . "X" . $qid;
+            $sgq = $RowQ['title'];
             $response->setAttribute("varName",$sgq);
 
             switch ($type)
@@ -1689,7 +1712,7 @@ function tokensExport($iSurveyID)
     {
         $tokenoutput .=", $attr_name";
         if (isset($attrfielddescr[$attr_name]))
-            $tokenoutput .=" <".str_replace(","," ",$attrfielddescr[$attr_name]).">";
+            $tokenoutput .=" <".str_replace(","," ",$attrfielddescr[$attr_name]['description']).">";
     }
     $tokenoutput .="\n";
 

@@ -27,7 +27,7 @@ class AdminController extends LSYii_Controller
     protected function _init()
     {
         parent::_init();
-        $updatelastcheck = '';
+        $updatelastcheck = getGlobalSetting('updatelastcheck');
 
         $this->_sessioncontrol();
 
@@ -142,7 +142,7 @@ class AdminController extends LSYii_Controller
         {
             $usrow = getGlobalSetting('DBVersion');
             if ((int) $usrow < Yii::app()->getConfig('dbversionnumber') && $action != 'update' && $action != 'authentication')
-                $this->redirect($this->createUrl('/admin/update/db'));
+                $this->redirect($this->createUrl('/admin/update/sa/db'));
         }
 
         if ($action != "update" && $action != "db")
@@ -153,7 +153,17 @@ class AdminController extends LSYii_Controller
 
                 Yii::app()->session['redirectopage'] = Yii::app()->request->requestUri;
 
-                $this->redirect($this->createUrl('/admin/authentication/login'));
+                $this->redirect($this->createUrl('/admin/authentication/sa/login'));
+            }
+            elseif (!empty($this->user_id)  && $action != "remotecontrol")
+            {
+                if (Yii::app()->session['session_hash'] != hash('sha256',getGlobalSetting('SessionName').Yii::app()->user->getName().Yii::app()->user->getId()))
+                {
+                    Yii::app()->session->clear();
+                    Yii::app()->session->close();
+                    $this->redirect($this->createUrl('/admin/authentication/sa/login'));
+                }
+                
             }
 
             return parent::run($action);
@@ -409,9 +419,9 @@ class AdminController extends LSYii_Controller
             Yii::app()->session['flashmessage'] = $clang->gT("Warning: You are still using the default password ('password'). Please change your password and re-login again.");
         }
 
-        $data['showupdate'] = (Yii::app()->session['USER_RIGHT_SUPERADMIN'] == 1 && Yii::app()->getConfig("updatelastcheck")>0 && Yii::app()->getConfig("updateavailable")==1 && Yii::app()->getConfig("updatable") );
-        $data['updateversion'] = Yii::app()->getConfig("updateversion");
-        $data['updatebuild'] = Yii::app()->getConfig("updatebuild");
+        $data['showupdate'] = (Yii::app()->session['USER_RIGHT_SUPERADMIN'] == 1 && getGlobalSetting("updatelastcheck")>0 && getGlobalSetting("updateavailable")==1 && Yii::app()->getConfig("updatable") );
+        $data['updateversion'] = getGlobalSetting("updateversion");
+        $data['updatebuild'] = getGlobalSetting("updatebuild");
         $data['surveyid'] = $surveyid;
         $data['iconsize'] = Yii::app()->getConfig('adminthemeiconsize');
         $data['sImageURL'] = Yii::app()->getConfig('adminimageurl');
@@ -430,12 +440,7 @@ class AdminController extends LSYii_Controller
 
         unset(Yii::app()->session['metaHeader']);
 
-        if(empty(Yii::app()->session['checksessionpost']))
-            Yii::app()->session['checksessionpost'] = '';
-
-        $data['checksessionpost'] = Yii::app()->session['checksessionpost'];
-
-        return $this->render('/admin/endScripts_view', $data);
+        return $this->render('/admin/endScripts_view', array());
     }
 
     public function _css_admin_includes($includes = array(), $reset = false)

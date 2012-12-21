@@ -18,7 +18,30 @@ class Tokens_dynamic extends LSActiveRecord
 {
 	protected static $sid = 0;
 
-	/**
+    /**
+     * Returns the static model of Settings table
+     *
+     * @static
+     * @access public
+     * @param int $surveyid
+     * @return Tokens_dynamic
+     */
+    public static function model($sid = NULL)
+    {
+        $refresh = false;
+        if (!is_null($sid)) {
+            self::sid($sid);
+            $refresh = true;
+        }
+        
+        $model = parent::model(__CLASS__);
+        
+        //We need to refresh if we changed sid
+        if ($refresh === true) $model->refreshMetaData();
+        return $model;
+    }
+    
+    /**
 	 * Sets the survey ID for the next model
 	 *
 	 * @static
@@ -29,22 +52,6 @@ class Tokens_dynamic extends LSActiveRecord
 	public static function sid($sid)
 	{
 		self::$sid = (int) $sid;
-	}
-
-	/**
-	 * Returns the static model of Settings table
-	 *
-	 * @static
-	 * @access public
-	 * @param int $surveyid
-	 * @return Tokens_dynamic
-	 */
-	public static function model($sid = null)
-	{
-        if (!is_null($sid))
-            self::sid($sid);
-
-		return parent::model(__CLASS__);
 	}
 
 	/**
@@ -218,6 +225,19 @@ class Tokens_dynamic extends LSActiveRecord
     {
         return Yii::app()->db->createCommand("SELECT tid FROM {{tokens_{$iSurveyID}}} WHERE token IS NULL OR token=''")->queryAll();
     }
+    
+    public static function countAllAndCompleted($sid)
+    {
+        $select = array(
+            'count(*) AS cntall',
+            'sum(CASE '. Yii::app()->db->quoteColumnName('completed') . '
+                 WHEN '.Yii::app()->db->quoteValue('Y').' THEN 0
+                          ELSE 1
+                 END) AS cntcompleted',
+            );
+        $result = Yii::app()->db->createCommand()->select($select)->from('{{tokens_' . $sid . '}}')->queryRow();
+        return $result;
+    }
 
    /**
      * Creates and inserts token for a specific token record and returns the token string created
@@ -346,15 +366,18 @@ class Tokens_dynamic extends LSActiveRecord
 			'criteria'=>$criteria,
 		));
 	}
-
-
-
-	function getSearchMultiple($condition,$page,$limit)
+    
+    /**
+     * Get CDbCriteria for a json search string
+     * 
+     * @param array $condition
+     * @return \CDbCriteria
+     */
+    function getSearchMultipleCondition($condition)
 	{
         $i=0;
         $j=1;
-        $tobedonelater =array();
-        $start = $limit*$page - $limit;
+        $tobedonelater =array(); 
         $command = new CDbCriteria;
         $command->condition = '';
         $iNumberOfConditions = (count($condition)+1)/4;
@@ -406,29 +429,10 @@ class Tokens_dynamic extends LSActiveRecord
         {
             $command->params = $aParams;
         }
-        if($page == 0 && $limit == 0)
-        {
-            $arr = Tokens_dynamic::model()->findAll($command);
-            $data = array();
-            foreach($arr as $t)
-            {
-                $data[$t->tid] = $t->attributes;
-            }
-        }
-        else
-        {
-            $command->limit = $limit;
-            $command->offset = $start;
-            $arr = Tokens_dynamic::model()->findAll($command);
-            $data = array();
-            foreach($arr as $t)
-            {
-                $data[$t->tid] = $t->attributes;
-            }
-        }
-
-        return $data;
+        
+        return $command;
 	}
+    
     function deleteToken($tokenid)
     {
         $dlquery = "DELETE FROM ".Tokens_dynamic::tableName()." WHERE tid=:tokenid";
@@ -443,20 +447,20 @@ class Tokens_dynamic extends LSActiveRecord
         return Yii::app()->db->createCommand($dlquery)->query();
     }
 
-    function getEmailStatus($sid,$token)
+    function getEmailStatus($token)
     {
         $command = Yii::app()->db->createCommand()
             ->select('emailstatus')
-            ->from('{{tokens_'.intval($sid).'}}')
+            ->from('{{tokens_'.intval(self::$sid).'}}')
             ->where('token=:token')
             ->bindParam(':token', $token, PDO::PARAM_STR);
 
         return $command->queryRow();
     }
 
-    function updateEmailStatus($sid,$token,$status)
+    function updateEmailStatus($token,$status)
     {
-        return Yii::app()->db->createCommand()->update('{{tokens_'.intval($sid).'}}',array('emailstatus' => $status),'token = :token',array(':token' => $token ));
+        return Yii::app()->db->createCommand()->update('{{tokens_'.intval(self::$sid).'}}',array('emailstatus' => $status),'token = :token',array(':token' => $token ));
     }
 }
 ?>

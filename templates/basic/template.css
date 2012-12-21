@@ -133,6 +133,7 @@ table.question {
   border: 1px solid #AAAAAA;
   border-collapse: collapse;
   width: 100%;
+  text-align: left;
 }
 
 td {
@@ -1070,7 +1071,7 @@ div.questionTitle {
 }
 
 /* Question Index */
-.withindex .outerframe{
+.withindex.outerframe{
   margin-left: 1em;
   margin-right: 26em;
 }

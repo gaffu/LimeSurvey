@@ -1,6 +1,5 @@
 <?php
-    $uidNames = array();
-    /* Build the options for additional languages */
+    // Build the options for additional languages
     $j = 1;
     $getlangvalues = getLanguageData(false,Yii::app()->session['adminlang']);
     if (Yii::app()->session['adminlang'] != 'auto')
@@ -17,29 +16,24 @@
         }
     }
     $langnames = implode(";", $lname);
-    /* Build the columnNames for the extra attributes */
-    /* and, build the columnModel */
-    $names = getTokenFieldsAndNames($surveyid, true);
-    $attributes = getAttributeFieldNames($surveyid);
+    // Build the columnNames for the extra attributes 
+    // and, build the columnModel
+    $attributes = getTokenFieldsAndNames($surveyid,true);
+    $uidNames=$columnNames=$aColumnHeader=array();
     if (count($attributes) > 0)
     {
-        foreach ($names as $name)
+        foreach ($attributes as $sFieldname=>$aData)
         {
-            $attnames[] = '"' . $name . '"';
+            $uidNames[] = '{ "name":"' . $sFieldname . '", "index":"' . $sFieldname . '", "sorttype":"string", "sortable": true, "align":"center", "editable":true, "width":75}';
+            $aColumnHeaders[]=$aData['description'];
         }
-        foreach ($attributes as $row)
-        {
-            $uidNames[] = '{ "name":"' . $row . '", "index":"' . $row . '", "sorttype":"string", "sortable": true, "align":"center", "editable":true, "width":75}';
-        }
-        $columnNames = implode(',', $attnames); //Add to the end of the standard list of columnNames
+        $columnNames='"'.implode('","',$aColumnHeaders).'"';
     }
-    else
-    {
-        $columnNames = "";
-    }
-    /* Build the javasript variables to pass to the jqGrid */
+
+    // Build the javasript variables to pass to the jqGrid
 ?>
 <script type="text/javascript">
+    var sAddParticipantToCPDBText = '<?php $clang->eT("Add participants to central database",'js');?>';
     var sRecordText = '<?php $clang->eT("View {0} - {1} of {2}",'js');?>';
     var sPageText = '<?php $clang->eT("Page {0} of {1}",'js');?>';
     var imageurl = "<?php echo Yii::app()->getConfig('adminimageurl'); ?>";
@@ -53,36 +47,42 @@
     var noRowSelected = "<?php $clang->eT("You have no row selected") ?>";
     var searchBtn = "<?php $clang->eT("Search") ?>";
     var shareMsg = "<?php $clang->eT("You can see and edit settings for shared participants in share panel.") ?>"; //PLEASE REVIEW
-    var jsonSearchUrl = "<?php echo Yii::app()->getController()->createUrl("admin/tokens/getSearch_json/surveyid/$surveyid/search"); ?>";
-    var getSearchIDs = "<?php echo Yii::app()->getController()->createUrl("admin/participants/getSearchIDs"); ?>";
+    var jsonSearchUrl = "<?php echo Yii::app()->getController()->createUrl("admin/tokens/sa/getSearch_json/surveyid/{$surveyid}/search"); ?>";
+    var getSearchIDs = "<?php echo Yii::app()->getController()->createUrl("admin/participants/sa/getSearchIDs"); ?>";
     var addbutton = "<?php echo Yii::app()->getConfig('adminimageurl')."plus.png" ?>";
     var minusbutton = "<?php echo Yii::app()->getConfig('adminimageurl') . "deleteanswer.png" ?>";
     var survey_id = "<?php echo $surveyid; ?>";
-    var delUrl = "<?php echo Yii::app()->getController()->createUrl("admin/tokens/delete/surveyid/" . $surveyid); ?>";
-    var cancelBtn = "<?php $clang->eT("Cancel") ?>";
+    var delUrl = "<?php echo Yii::app()->getController()->createUrl("admin/tokens/sa/delete/surveyid/{$surveyid}"); ?>";
+    var saveBtn = "<?php $clang->eT("Save changes") ?>";
     var okBtn = "<?php echo $clang->eT("OK") ?>";
     var delmsg = "<?php $clang->eT("Are you sure you want to delete the selected entries?") ?>";
     var surveyID = "<?php echo $surveyid; ?>";
-    var jsonUrl = "<?php echo Yii::app()->getController()->createUrl('admin/tokens/getTokens_json/surveyid/' . $surveyid); ?>";
-    var postUrl = "<?php echo Yii::app()->getController()->createUrl("admin/participants/setSession"); ?>";
-    var editUrl = "<?php echo Yii::app()->getController()->createUrl('admin/tokens/editToken/surveyid/' . $surveyid); ?>";
+    var jsonUrl = "<?php echo Yii::app()->getController()->createUrl("admin/tokens/sa/getTokens_json/surveyid/{$surveyid}"); ?>";
+    var postUrl = "<?php echo Yii::app()->getController()->createUrl("admin/participants/sa/setSession"); ?>";
+    var editUrl = "<?php echo Yii::app()->getController()->createUrl("admin/tokens/sa/editToken/surveyid/{$surveyid}"); ?>";
     var sEmptyRecords ='<?php $clang->eT("Participant table is empty.",'js');?>';
     var sCaption ='<?php $clang->eT("Survey participants",'js');?>';
     var sDelTitle = '<?php $clang->eT("Delete selected participant(s) from this survey",'js');?>';
     var sRefreshTitle ='<?php $clang->eT("Reload participant list",'js');?>';
     var noSearchResultsTxt = '<?php $clang->eT("No survey participants matching the search criteria",'js');?>';
     var sFind= '<?php $clang->eT("Filter",'js');?>';
-    var remindurl = "<?php echo Yii::app()->getController()->createUrl("admin/tokens/email/action/remind/surveyid/{$surveyid}/tokenids/|"); ?>";
-    var attMapUrl = "<?php echo $this->createUrl("admin/participants/attributeMapToken/sid/");?>";
+    var remindurl = "<?php echo Yii::app()->getController()->createUrl("admin/tokens/sa/email/action/remind/surveyid/{$surveyid}/tokenids/|"); ?>";
+    var attMapUrl = "<?php echo $this->createUrl("admin/participants/sa/attributeMapToken/sid/");?>";
     var invitemsg = "<?php echo $clang->eT("Send invitation emails to the selected entries (if they have not yet been sent an invitation email)"); ?>"
     var remindmsg = "<?php echo $clang->eT("Send reminder email to the selected entries (if they have already received the invitation email)"); ?>"
-    var inviteurl = "<?php echo Yii::app()->getController()->createUrl("admin/tokens/email/action/invite/surveyid/{$surveyid}/tokenids/|"); ?>";
+    var inviteurl = "<?php echo Yii::app()->getController()->createUrl("admin/tokens/sa/email/action/invite/surveyid/{$surveyid}/tokenids/|"); ?>";
+    <?php if (!hasGlobalPermission('USER_RIGHT_PARTICIPANT_PANEL')){?>
+    var bParticipantPanelPermission=false;
+    <?php 
+    } else {?>
+    var bParticipantPanelPermission=true;
     var viewParticipantsLink = "<?php $clang->eT("View participants of this survey in the central participant database panel") ?>";
+    <?php } ?>
     var sBounceProcessing = "<?php $clang->eT("Start bounce processing") ?>";
-    var sBounceProcessingURL = "<?php echo Yii::app()->getController()->createUrl('admin/tokens/bounceprocessing/surveyid/' . $surveyid); ?>";
-    var participantlinkUrl="<?php echo Yii::app()->getController()->createUrl("admin/participants/displayParticipants/searchurl/survey||equal||".$surveyid); ?>";
+    var sBounceProcessingURL = "<?php echo Yii::app()->getController()->createUrl("admin/tokens/sa/bounceprocessing/surveyid/{$surveyid}"); ?>";
+    var participantlinkUrl="<?php echo Yii::app()->getController()->createUrl("admin/participants/sa/displayParticipants/searchurl/surveyid||equal||{$surveyid}"); ?>";
     var searchtypes = ["<?php $clang->eT("Equals") ?>","<?php $clang->eT("Contains") ?>","<?php $clang->eT("Not equal") ?>","<?php $clang->eT("Not contains") ?>","<?php $clang->eT("Greater than") ?>","<?php $clang->eT("Less than") ?>"]
-    var colNames = ["ID","<?php $clang->eT("Action") ?>","<?php $clang->eT("First name") ?>","<?php $clang->eT("Last name") ?>","<?php $clang->eT("Email address") ?>","<?php $clang->eT("Email status") ?>","<?php $clang->eT("Email history") ?>","<?php $clang->eT("Token") ?>","<?php $clang->eT("Language") ?>","<?php $clang->eT("Invitation sent?") ?>","<?php $clang->eT("Reminder sent?") ?>","<?php $clang->eT("Reminder count") ?>","<?php $clang->eT("Completed?") ?>","<?php $clang->eT("Uses left") ?>","<?php $clang->eT("Valid from") ?>","<?php $clang->eT("Valid until") ?>",<?php echo $columnNames; ?>];
+    var colNames = ["ID","<?php $clang->eT("Action") ?>","<?php $clang->eT("First name") ?>","<?php $clang->eT("Last name") ?>","<?php $clang->eT("Email address") ?>","<?php $clang->eT("Email status") ?>","<?php $clang->eT("Token") ?>","<?php $clang->eT("Language") ?>","<?php $clang->eT("Invitation sent?") ?>","<?php $clang->eT("Reminder sent?") ?>","<?php $clang->eT("Reminder count") ?>","<?php $clang->eT("Completed?") ?>","<?php $clang->eT("Uses left") ?>","<?php $clang->eT("Valid from") ?>","<?php $clang->eT("Valid until") ?>"<?php if (count($columnNames)) echo ','.$columnNames; ?>];
     var colModels = [
     { "name":"tid", "index":"tid", "width":30, "align":"center", "sorttype":"int", "sortable": true, "editable":false, "hidden":false},
     { "name":"action", "index":"action", "sorttype":"string", "sortable": false, "width":100, "align":"center", "editable":false},
@@ -99,17 +99,10 @@
     { "name":"completed", "index":"completed","align":"center", "sorttype":"int", "sortable": true,"width":80,"editable":true},
     { "name":"usesleft", "index":"usesleft","align":"center", "sorttype":"int", "sortable": true,"width":80,"editable":true},
     { "name":"validfrom", "index":"validfrom","align":"center", "sorttype":"int", "sortable": true,"width":160,"editable":true},
-    { "name":"validuntil", "index":"validuntil","align":"center", "sorttype":"int", "sortable": true,"width":160,"editable":true},
-    <?php echo implode(",\n", $uidNames); ?>];
+    { "name":"validuntil", "index":"validuntil","align":"center", "sorttype":"int", "sortable": true,"width":160,"editable":true}
+    <?php if (count($uidNames)) echo ','.implode(",\n", $uidNames); ?>];
     <!--
-    for(i=0; i<document.forms.length; i++)
-        {
-        var el = document.createElement('input');
-        el.type = 'hidden';
-        el.name = 'checksessionbypost';
-        el.value = 'kb9e2u4s55';
-        document.forms[i].appendChild(el);
-    }
+
     function addHiddenElement(theform,thename,thevalue)
     {
         var myel = document.createElement('input');
@@ -130,7 +123,6 @@
             {
             addHiddenElement(myform,arrayparam[i],arrayval[i])
         }
-        addHiddenElement(myform,'checksessionbypost',checkcode)
         myform.submit();
     }
 
@@ -175,25 +167,27 @@
 </div>
 <br/>
 <table id="displaytokens"></table> <div id="pager"></div>
-<p><input type='button' name='addtocpdb' id='addtocpdb' value='<?php $clang->eT("Add participants to central database");?>'/><br />
-<div id="addcpdb" title="addsurvey" style="display:none">
-    <p><?php $clang->eT("Please select the attributes that are to be added to the central database"); ?></p>
-    <p>
-        <select id="attributeid" name="attributeid" multiple="multiple">
-            <?php
-                if(!empty($attrfieldnames))
-                {
-                    foreach($attrfieldnames as $key=>$value)
+
+<?php if (hasGlobalPermission('USER_RIGHT_PARTICIPANT_PANEL')) { ?>
+    <div id="addcpdb" title="addsurvey" style="display:none">
+        <p><?php $clang->eT("Please select the attributes that are to be added to the central database"); ?></p>
+        <p>
+            <select id="attributeid" name="attributeid" multiple="multiple">
+                <?php
+                    if(!empty($attrfieldnames))
                     {
-                        echo "<option value='".$key."'>".$value."</option>";
+                        foreach($attrfieldnames as $key=>$value)
+                        {
+                            echo "<option value='".$key."'>".$value."</option>";
+                        }
                     }
-                }
 
-            ?>
-        </select>
-    </p>
+                ?>
+            </select>
+        </p>
 
-</div>
+    </div>
+<?php } ?>
 </div>
 
 

@@ -8,7 +8,7 @@
     {
         if (newtemplatename=window.prompt(text, defvalue))
             {
-            sendPost('<?php echo $this->createUrl('admin/templates/template'); ?>'+action,'<?php echo Yii::app()->session['checksessionpost']; ?>',new Array('action','newname','copydir'),new Array('template'+action,newtemplatename,copydirectory));
+            sendPost('<?php echo $this->createUrl('admin/templates/sa/template'); ?>'+action,'',new Array('action','newname','copydir'),new Array('template'+action,newtemplatename,copydirectory));
         }
     }
 
@@ -65,9 +65,9 @@
             } ?>
             <?php if(is_writable($tempdir) && is_writable($usertemplaterootdir))
                 {?>
-                <a href='#' onclick='javascript:window.open("<?php echo $this->createUrl('admin/templates/upload'); ?>", "_top")'>
+                <a href='#' onclick='javascript:window.open("<?php echo $this->createUrl('admin/templates/sa/upload'); ?>", "_top")'>
                     <img src='<?php echo $sImageURL; ?>import.png' alt='<?php $clang->eT("Import template"); ?>' title='' /></a>
-                <a href='#' onclick='javascript:window.open("<?php echo $this->createUrl('admin/templates/templatezip/templatename/' . $templatename) ?>", "_top")'>
+                <a href='#' onclick='javascript:window.open("<?php echo $this->createUrl('admin/templates/sa/templatezip/templatename/' . $templatename) ?>", "_top")'>
                     <img src='<?php echo $sImageURL; ?>export.png' alt='<?php $clang->eT("Export Template"); ?>' /></a>
                 <img src='<?php echo $sImageURL; ?>separator.gif' class='separator' alt='' />
                 <a href='#' onclick="javascript: copyprompt('<?php $clang->eT("Please enter the name for the copied template:"); ?>', '<?php echo $clang->gT("copy_of_")."$templatename"; ?>',            '<?php echo $templatename; ?>', 'copy')">
@@ -88,7 +88,7 @@
                 { ?>
                 <a href='#' onclick="javascript: copyprompt('<?php $clang->eT("Rename this template to:"); ?>', '<?php echo $templatename; ?>', '<?php echo $templatename; ?>', 'rename');">
                     <img src='<?php echo $sImageURL; ?>edit.png' alt='<?php $clang->eT("Rename this template"); ?>' /></a>
-                <a href='#' onclick='if (confirm("<?php $clang->eT("Are you sure you want to delete this template?", "js"); ?>")) window.open("<?php echo $this->createUrl('admin/templates/delete/templatename/'.$templatename); ?>", "_top")' >
+                <a href='#' onclick='if (confirm("<?php $clang->eT("Are you sure you want to delete this template?", "js"); ?>")) window.open("<?php echo $this->createUrl('admin/templates/sa/delete/templatename/'.$templatename); ?>", "_top")' >
                     <img src='<?php echo $sImageURL; ?>delete.png' alt='<?php $clang->eT("Delete this template"); ?>'/></a>
                 <?php
             } ?>
@@ -109,17 +109,17 @@
         <div class='menubar-right'>
 
             <label for='templatedir'><?php $clang->eT("Template:"); ?></label>
-            <select class="listboxtemplates" id='templatedir' name='templatedir' onchange="javascript: window.open('<?php echo $this->createUrl("admin/templates/view/editfile/".$editfile."/screenname/".$screenname); ?>/templatename/'+escape(this.value), '_top')">
+            <select class="listboxtemplates" id='templatedir' name='templatedir' onchange="javascript: window.open('<?php echo $this->createUrl("admin/templates/sa/view/editfile/".$editfile."/screenname/".$screenname); ?>/templatename/'+escape(this.value), '_top')">
                 <?php echo templateoptions($templates, $templatename); ?>
             </select>
             <label for='listboxtemplates'><?php $clang->eT("Screen:"); ?></label>
-            <select class="listboxtemplates" id='listboxtemplates' name='screenname' onchange="javascript: window.open('<?php echo $this->createUrl("admin/templates/screenredirect/editfile/".$editfile."/templatename/".$templatename); ?>/screenname/'+escape(this.value), '_top')">
+            <select class="listboxtemplates" id='listboxtemplates' name='screenname' onchange="javascript: window.open('<?php echo $this->createUrl("admin/templates/sa/screenredirect/editfile/".$editfile."/templatename/".$templatename); ?>/screenname/'+escape(this.value), '_top')">
                 <?php echo makeoptions($screens, "id", "name", HTMLEscape($screenname) ); ?>
             </select>
             <a href='#' onclick="javascript: copyprompt('<?php $clang->eT("Create new template called:"); ?>', '<?php $clang->eT("NewTemplate"); ?>', 'default', 'copy')">
                 <img src='<?php echo $sImageURL; ?>add.png' alt='<?php $clang->eT("Create new template"); ?>' /></a>
             <img src='<?php echo $sImageURL; ?>separator.gif' class='separator' alt='' />
-            <a href="<?php echo $this->createUrl("admin/authentication/logout"); ?>">
+            <a href="<?php echo $this->createUrl("admin/authentication/sa/logout"); ?>">
                 <img src='<?php echo $sImageURL; ?>logout.png' alt='<?php $clang->eT("Logout"); ?>' /></a>
             <img src='<?php echo $sImageURL; ?>blank.gif' alt='' width='20'  />
         </div>

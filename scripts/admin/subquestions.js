@@ -1,6 +1,7 @@
 // $Id: subquestions.js 9692 2011-01-15 21:31:10Z c_schmitz $
 var labelcache=[];
 $(document).ready(function(){
+    removeCSRFDivs();    
     $("body").delegate(".code", "keypress", function(e) {
         key=e.which;
         if ( key==null || key==0 || key==8 || key==9  || key==27 )
@@ -10,7 +11,8 @@ $(document).ready(function(){
         return returnvalue;
     });
     $("body").delegate(".code", "keyup", function() {
-        $(this).val($(this).val().replace(/[^a-zA-Z0-9_]/,''));
+        if ($(this).val().replace(/[^a-zA-Z0-9_]/,'')!=$(this).val())
+            $(this).val($(this).val().replace(/[^a-zA-Z0-9_]/,''));
     });
     $('.tab-page:first .answertable tbody').sortable({   containment:'parent',
         start:startmove,
@@ -23,10 +25,18 @@ $(document).ready(function(){
         modal: true,
         width:800,
         title: lsbrowsertitle});
-    $('#quickadd').dialog({ autoOpen: false,
+    $('#quickadd').dialog({ 
+		autoOpen: false,
         modal: true,
         width:600,
-        title: quickaddtitle});
+        title: quickaddtitle,
+		open: function( event, ui ) {
+			$('textarea', this).show(); // IE 8 hack
+		},
+		beforeClose: function( event, ui ) {
+			$('textarea', this).hide(); // IE 8 hack
+		}
+	});
 
     $('.btnlsbrowser').click(lsbrowser);
     $('#btncancel').click(function(){
@@ -623,13 +633,13 @@ function setlabel()
         if(!flag[1]){
             $('#laname').remove();
             $('[for=laname]').remove();
-            $($(this).next().next()).after('<select name="laname" id="lasets">');
+            $($(this).next().next()).after('<select name="laname" id="lasets"><option value=""></option></select>');
             jQuery.getJSON(lanameurl, function(data) {
                 $.each(data, function(key, val) {
                     $('#lasets').append('<option value="' + key + '">' + val + '</option>');
                 });
             });
-            $('#lasets').append('</select>');
+            $('#lasets option[value=""]').remove();
             flag[1] = true;
             flag[0] = false;
         }
@@ -702,10 +712,18 @@ function ajaxreqsave() {
 
     // get code for the current scale
     var code = new Array();
-    $('.code').each(function(index) {
-        if($(this).attr('id').substr(-1) === scale_id)
-            code.push($(this).val());
-    });
+    if($('.code').length > 0) { // Deactivated survey
+		$('.code').each(function(index) {
+			if($(this).attr('id').substr(-1) === scale_id)
+				code.push($(this).val());
+		});
+	}
+    else { // Activated survey
+		$('.answertable input[name^="code_"]').each(function(index) {
+			if($(this).attr('name').substr(-1) === scale_id)
+				code.push($(this).attr('value'));
+		});
+	}
 
     answers = new Object();
     languages = langs.split(';');

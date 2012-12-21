@@ -2,7 +2,7 @@
     if ($tableExists) {
     ?>
     <div class='header ui-widget-header'><?php $clang->eT("Import a VV survey file"); ?></div>
-    <form id='vvexport' enctype='multipart/form-data' method='post' action="<?php echo $this->createURL('admin/dataentry/vvimport/surveyid/'.$surveyid); ?>">
+    <?php echo CHtml::form(array('admin/dataentry/sa/vvimport/surveyid/'.$surveyid), 'post', array('enctype'=>'multipart/form-data', 'id'=>'vvexport'));?>
         <ul>
             <li>
                 <label for='the_file'><?php $clang->eT("File:"); ?></label>
@@ -47,6 +47,6 @@
         <div class='warningheader'><?php $clang->eT("Cannot import the VVExport file."); ?></div>
         <?php $clang->eT("This survey is not active. You must activate the survey before attempting to import a VVexport file."); ?>
         <br /> <br />
-        [<a href='<?php echo $this->createUrl('/admin/survey/view/'.$surveyid); ?>'><?php $clang->eT("Return to survey administration"); ?></a>]
+        [<a href='<?php echo $this->createUrl('admin/survey/sa/view/'.$surveyid); ?>'><?php $clang->eT("Return to survey administration"); ?></a>]
     </div>
     <?php } ?>

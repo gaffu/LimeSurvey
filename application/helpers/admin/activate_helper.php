@@ -263,8 +263,7 @@ function activateSurvey($iSurveyID, $simulate = false)
     $fieldmap = createFieldMap($iSurveyID,'full',true,false,getBaseLanguageFromSurveyID($iSurveyID));
     
     $createsurvey = array();
-    
-    
+
     foreach ($fieldmap as $j=>$arow) //With each question, create the appropriate field(s)
     {
         switch($arow['type'])
@@ -343,6 +342,9 @@ function activateSurvey($iSurveyID, $simulate = false)
                 if ($prow->refurl == "Y")
                     $createsurvey[$arow['fieldname']] = "text";
                 break;
+            case "token":
+                    $createsurvey[$arow['fieldname']] = "VARCHAR(36)";
+                break;
             case '*': // Equation
                 $createsurvey[$arow['fieldname']] = "text";
                 break;
@@ -352,9 +354,9 @@ function activateSurvey($iSurveyID, $simulate = false)
             default:
                 $createsurvey[$arow['fieldname']] = "VARCHAR(5)";
         }
-        if ($prow->anonymized == 'N') {
-            $createsurvey['token'] = "VARCHAR(35)";
-        }
+    if ($prow->anonymized == 'N' && !array_key_exists('token',$createsurvey)) {
+        $createsurvey['token'] = "VARCHAR(36)";
+    }
         if ($simulate){
             $tempTrim = trim($createsurvey);
             $brackets = strpos($tempTrim,"(");
@@ -378,10 +380,10 @@ function activateSurvey($iSurveyID, $simulate = false)
     //$createsurvey = rtrim($createsurvey, ",\n")."\n"; // Does nothing if not ending with a comma
 
     $tabname = "{{survey_{$iSurveyID}}}";
-    $command = new CDbCommand(Yii::app()->db);
+    Yii::app()->loadHelper("database");
     try
     {
-        $execresult = $command->createTable($tabname,$createsurvey);
+        $execresult = createTable($tabname, $createsurvey);
     }
     catch (CDbException $e)
     {
@@ -428,11 +430,10 @@ function activateSurvey($iSurveyID, $simulate = false)
             $column[$field] = 'FLOAT';
         }
 
-        $command = new CDbCommand(Yii::app()->db);
         $tabname = "{{survey_{$iSurveyID}}}_timings";
         try
         {
-            $execresult = $command->createTable($tabname,$column);
+            $execresult = createTable($tabname,$column);
         }
         catch (CDbException $e)
         {

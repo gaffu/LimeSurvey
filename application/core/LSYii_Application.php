@@ -1,4 +1,4 @@
-<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+<?php 
 /*
 * LimeSurvey
 * Copyright (C) 2007-2011 The LimeSurvey Project Team / Carsten Schmitz
@@ -28,10 +28,68 @@ class LSYii_Application extends CWebApplication
     */
     public function __construct($config = null)
     {
-        if (!file_exists($config))
+        if (is_string($config) && !file_exists($config))
         {
-            $config = APPPATH . 'config/config-sample' . EXT;
+            $config = APPPATH . 'config/config-sample-mysql' . EXT;
+        } 
+        if(is_string($config)) {
+            $config = require($config);
         }
+        
+        if ($config['config']['debug'] == 2)
+        {
+            // If debug = 2 we add firebug / console logging for all trace messages
+            // If you want to var_dump $config you could do:
+            // 
+            // Yii::trace(CVarDumper::dumpAsString($config), 'vardump');
+            // 
+            // or shorter:
+            // 
+            //traceVar($config);
+            // 
+            // This statement won't cause any harm or output when debug is 1 or 0             
+            $config['preload'][] = 'log';
+            if (array_key_exists('components', $config) && array_key_exists('log', $config['components'])) {
+                // We already have some custom logging, only add our own
+            } else {
+                // No logging yet, set it up
+                $config['components']['log'] = array(
+                    'class' => 'CLogRouter');
+            }
+            // Add logging of trace
+            $config['components']['log']['routes'][] = array(
+                'class'                      => 'CWebLogRoute', // you can include more levels separated by commas... trace is shown on debug only
+                'levels'                     => 'trace',        // you can include more separated by commas
+                'categories'                 => 'vardump',      // show in firebug/console
+                'showInFireBug'              => true
+            );
+            
+            // if debugsql = 1 we add sql logging to the output
+            if (array_key_exists('debugsql', $config['config']) && $config['config']['debugsql'] == 1) {
+                // Add logging of trace
+                $config['components']['log']['routes'][] = array(
+                    'class'                      => 'CWebLogRoute', // you can include more levels separated by commas... trace is shown on debug only
+                    'levels'                     => 'trace',        // you can include more separated by commas
+                    'categories'                 => 'system.db.*',      // show in firebug/console
+                    'showInFireBug'              => true
+                );
+                $config['components']['db']['enableProfiling'] = true;
+                $config['components']['db']['enableParamLogging'] = true;
+            }
+        }
+
+        $config['components']['request']=array(
+            'class'=>'LSHttpRequest',
+            'noCsrfValidationRoutes'=>array(
+//              '^services/wsdl.*$'   // Set here additional regex rules for routes not to be validate 
+                'getTokens_json',
+                'getSurveys_json',
+                'remotecontrol'
+            ),
+            'enableCsrfValidation'=>false,    // Enable to activate CSRF protection
+            'enableCookieValidation'=>false   // Enable to activate cookie protection
+        );
+
         parent::__construct($config);
         // Load the default and environmental settings from different files into self.
         $ls_config = require(APPPATH . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config-defaults.php');
@@ -49,7 +107,9 @@ class LSYii_Application extends CWebApplication
         }
 
         foreach ($settings as $key => $value)
+        {
             $this->setConfig($key, $value);
+        }        
     }
 
     /**
@@ -131,4 +191,22 @@ class LSYii_Application extends CWebApplication
         $this->lang = $lang;
     }
 
+}
+
+/**
+ * If debug = 2 in application/config.php this will produce output in the console / firebug
+ * similar to var_dump. It will also include the filename and line that called this method.
+ * 
+ * @param mixed $variable The variable to be dumped
+ * @param int $depth Maximum depth to go into the variable, default is 10
+ */
+function traceVar($variable, $depth = 10) {
+    $msg = CVarDumper::dumpAsString($variable, $depth, false);
+    $fullTrace = debug_backtrace();
+    $trace=array_shift($fullTrace);
+	if(isset($trace['file'],$trace['line']) && strpos($trace['file'],YII_PATH)!==0)
+	{
+        $msg = $trace['file'].' ('.$trace['line']."):\n" . $msg;
+    }
+    Yii::trace($msg, 'vardump');
 }
