@@ -934,10 +934,14 @@
                         }
                         elseif ($fieldinfo['type'] == 'D')
                         {
-                            // $_SESSION['survey_'.$surveyid][$fieldinfo['fieldname']] now contains the crappy value parsed by
+                            // $_SESSION['survey_'.$surveyid][$fieldinfo['fieldname']] now contains the value parsed by
                             // Date_Time_Converter in save.php. We can leave it there. We just do validation here.
-                            $dateformatdetails = getDateFormatDataForQID($qidattributes, $thissurvey);
-                            $datetimeobj = DateTime::createFromFormat($dateformatdetails['phpdate'], $_POST[$field]);
+
+                            // deactivated this for now because DateTime::createFromFormat is only available in 5.3 or later
+                            // @todo: Find a strict date validation routine for 5.1.8 or later that understands the standard PHP datetime format
+                            $datetimeobj = true;
+                            //$dateformatdetails = getDateFormatDataForQID($qidattributes, $thissurvey);
+                            //$datetimeobj = DateTime::createFromFormat($dateformatdetails['phpdate'], $_POST[$field]);
                             if(!$datetimeobj)
                             {
                                 $notvalidated[]=$field;
@@ -1169,6 +1173,11 @@
         // @todo: Remove globals
         global $thissurvey, $maildebug, $tokensexist;
         
+        if (trim($thissurvey['adminemail'])=='')
+        {
+            return;
+        }
+        
         $homeurl=Yii::app()->createAbsoluteUrl('/admin');
         $clang = Yii::app()->lang;
         $sitename = Yii::app()->getConfig("sitename");
@@ -1289,7 +1298,8 @@
         }
 
         $sFrom = $thissurvey['adminname'].' <'.$thissurvey['adminemail'].'>';
-
+    
+        
         $redata=compact(array_keys(get_defined_vars()));
         if (count($aEmailNotificationTo)>0)
         {
@@ -1919,7 +1929,7 @@
     // If we have randomization groups set, then lets cycle through each group and
     // replace questions in the group with a randomly chosen one from the same group
     if (count($randomGroups) > 0)
-    {
+    {       
         $copyFieldMap = array();
         $oldQuestOrder = array();
         $newQuestOrder = array();
@@ -1934,7 +1944,7 @@
         }
 
         // Loop through the fieldmap and swap each question as they come up
-        while (list($fieldkey,$fieldval) = each($fieldmap))
+        foreach ($fieldmap as $fieldkey => $fieldval)
         {
             $found = 0;
             foreach ($randomGroups as $gkey=>$gval)
@@ -1944,19 +1954,11 @@
                 {
                     // Get the swapped question
                     $oldQuestFlip = array_flip($oldQuestOrder[$gkey]);
-                    $qfieldmap = createFieldMap($surveyid,'full',true,$newQuestOrder[$gkey][$oldQuestFlip[$fieldval['qid']]],$_SESSION['survey_'.$surveyid]['s_lang']);
-                    unset($qfieldmap['id']);
-                    unset($qfieldmap['submitdate']);
-                    unset($qfieldmap['lastpage']);
-                    unset($qfieldmap['lastpage']);
-                    unset($qfieldmap['token']);
-                    unset($qfieldmap['startlanguage']);
-                    foreach ($qfieldmap as $tkey=>$tval)
-                    {
-                        // Assign the swapped question (Might be more than one field)
-                        $tval['random_gid'] = $fieldval['gid'];
-                        //$tval['gid'] = $fieldval['gid'];
-                        $copyFieldMap[$tkey]=$tval;
+                    foreach($fieldmap as $key => $field) {
+                        if (isset($field['qid']) && $field['qid'] == $newQuestOrder[$gkey][$oldQuestFlip[$fieldval['qid']]]) {
+                            $field['random_gid'] = $fieldval['gid'];
+                            $copyFieldMap[$key] = $field;
+                        }
                     }
                     $found = 1;
                     break;
@@ -2680,7 +2682,7 @@ function encodeEmail($mail, $text="", $class="", $params=array())
 */
 function GetReferringUrl()
 {
-    global $clang,$stripQueryFromRefurl;
+    global $clang;
 
     $clang = Yii::app()->lang;
 
@@ -2689,7 +2691,7 @@ function GetReferringUrl()
     {
         if(!preg_match('/'.$_SERVER["SERVER_NAME"].'/', $_SERVER["HTTP_REFERER"]))
         {
-            if (!isset($stripQueryFromRefurl) || !$stripQueryFromRefurl)
+            if (!Yii::app()->getConfig('strip_query_from_referer_url'))
             {
                 return $_SERVER["HTTP_REFERER"];
             }
@@ -2719,7 +2721,10 @@ function display_first_page() {
 
     $clang = Yii::app()->lang;
 
+    // Fill some necessary var for template
     $navigator = surveymover();
+    $sitename = Yii::app()->getConfig('sitename');
+    $languagechanger=makeLanguageChangerSurvey($clang->langcode);
 
     sendCacheHeaders();
     doHeader();
@@ -2770,6 +2775,8 @@ function killSurveySession($iSurveyID)
 {
     // Unset the session
     unset($_SESSION['survey_'.$iSurveyID]);
+    // Force EM to refresh
+    LimeExpressionManager::SetDirtyFlag();    
 }
 
 
