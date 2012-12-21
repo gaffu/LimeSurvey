@@ -4535,14 +4535,15 @@ function SendEmailMessage($body, $subject, $to, $from, $sitename, $ishtml=false,
                     'limesurvey'
                 )
             ),
-            'async' => true
+            'async' => false
         );
         if($iSurveyID != null){
             $data['message']['tags'][] = 'Survey_'.$iSurveyID;
         }
+        // Use meta tags instead of header for our tracking needs
         foreach($customheaders as $header){
             $tmpHeader = explode(': ', $header);
-            $data['message']['headers'][$tmpHeader[0]] = $tmpHeader[1];
+            $data['message']['metadata'][$tmpHeader[0]] = $tmpHeader[1];
         }
         // Send email through Mandrill
         $respons = json_decode($mandrill->send($data), true);
