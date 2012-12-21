@@ -6701,7 +6701,7 @@ function doTokenCustomAttribute($ia, $surveyId){
     $criteria->select = 'value';
     $criteria->condition = 'qid = '.$ia[0].' && attribute = "Token benchmark"';
     $qAttribute = Question_attributes::model()->find($criteria)->getAttribute('value');
-  
+
     // Fetch custom attribute value
     $criteria->select = $qAttribute;
     $criteria->condition = 'token = "'.$_SESSION['survey_'.$surveyId]['token'].'"';

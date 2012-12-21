@@ -478,7 +478,26 @@ class tokens extends Survey_Common_Action
             } else {
                 $action .= '<div style="width: 20px; height: 16px; float: left;"></div>';
             }
-            $aRowToAdd['cell'] = array($token['tid'], $action, $token['firstname'], $token['lastname'], $token['email'], $token['emailstatus'], $token['token'], $token['language'], $token['sent'], $token['remindersent'], $token['remindercount'], $token['completed'], $token['usesleft'], $token['validfrom'], $token['validuntil']);
+            // Format the email history
+            if(!empty($token['emailhistory'])){
+                $tmpHistory = '';
+                $timestamps = unserialize($token['emailhistory']);
+                foreach($timestamps as $timestamp => $histories){
+                    $date = date('d F Y H:i:s', intval($timestamp));
+                    foreach($histories as $history){
+                        $tmpHistory .= $date.' - '.$history['event'];
+                        if($history['event'] == 'click'){
+                            $tmpHistory .= ' - '.$history['msg']['clicks'][0]['url'];
+                        }
+                        $tmpHistory .= "\n";
+                    }
+                }         
+                $emailhistory = '<img src="'.Yii::app()->getConfig('adminimageurl').'info.png" title="'.$tmpHistory.'" alt="'.$tmpHistory.'" />';
+            }else{
+                $emailhistory = '';
+            }
+            
+            $aRowToAdd['cell'] = array($token['tid'], $action, $token['firstname'], $token['lastname'], $token['email'], $token['emailstatus'], $emailhistory, $token['token'], $token['language'], $token['sent'], $token['remindersent'], $token['remindercount'], $token['completed'], $token['usesleft'], $token['validfrom'], $token['validuntil']);
             foreach ($attributes as $attribute) {
                 $aRowToAdd['cell'][] = $token[$attribute];
             }
