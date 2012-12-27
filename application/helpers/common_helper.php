@@ -4447,7 +4447,7 @@ function javascriptEscape($str, $strip_tags=false, $htmldecode=false) {
 * $param int $iSurveyID the survey id
 * @return bool If successful returns true
 */
-function SendEmailMessage($body, $subject, $to, $from, $sitename, $ishtml=false, $bouncemail=null, $attachment=null, $customheaders="", $iSurveyID=null)
+function SendEmailMessage($body, $subject, $to, $from, $sitename, $ishtml=false, $bouncemail=null, $attachment=null, $customheaders="", $iSurveyID=null, $metaTags=null)
 {
     global $maildebug, $maildebugbody;
 
@@ -4563,9 +4563,9 @@ function SendEmailMessage($body, $subject, $to, $from, $sitename, $ishtml=false,
             $data['message']['tags'][] = 'Survey_'.$iSurveyID;
         }
         // Use meta tags instead of header for our tracking needs
-        foreach($customheaders as $header){
-            $tmpHeader = explode(': ', $header);
-            $data['message']['metadata'][$tmpHeader[0]] = $tmpHeader[1];
+        foreach($metaTags as $metaTag){
+            $tmpTag = explode(': ', $metaTag);
+            $data['message']['metadata'][$tmpTag[0]] = $tmpTag[1];
         }
         // Send email through Mandrill
         $respons = json_decode($mandrill->send($data), true);

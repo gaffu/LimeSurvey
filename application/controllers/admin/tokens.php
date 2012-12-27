@@ -1307,7 +1307,7 @@ class tokens extends Survey_Common_Action
             if ($emcount > 0)
             {
                 foreach ($emresult as $emrow)
-                {
+                {                    
                     $to = array();
                     $aEmailaddresses = explode(';', $emrow['email']);
                     foreach ($aEmailaddresses as $sEmailaddress)
@@ -1351,9 +1351,12 @@ class tokens extends Survey_Common_Action
                             $barebone_link = $url;
                         }
                     }
-
+                    
                     $customheaders = array('1' => "X-surveyid: " . $iSurveyId,
                     '2' => "X-tokenid: " . $fieldsarray["{TOKEN}"]);
+                    
+                    $metaTags = $customheaders;
+                    $metaTags[] = 'tid: '.$emrow['tid'];
 
                     global $maildebug;
                     $modsubject = Replacefields(Yii::app()->request->getPost('subject_' . $emrow['language']), $fieldsarray);
@@ -1375,7 +1378,7 @@ class tokens extends Survey_Common_Action
                     }
                     else
                     {
-                        if (SendEmailMessage($modmessage, $modsubject, $to, $from, Yii::app()->getConfig("sitename"), $bHtml, getBounceEmail($iSurveyId), null, $customheaders, $iSurveyId))
+                        if (SendEmailMessage($modmessage, $modsubject, $to, $from, Yii::app()->getConfig("sitename"), $bHtml, getBounceEmail($iSurveyId), null, $customheaders, $iSurveyId, $metaTags))
                         {
                             // Put date into sent
                             $udequery = Tokens_dynamic::model($iSurveyId)->findByPk($emrow['tid']);
