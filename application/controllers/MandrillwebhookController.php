@@ -39,7 +39,9 @@ class MandrillWebHookController extends LSYii_Controller {
                                 krsort($emailhistory);
                                 foreach ($emailhistory as $history) {
                                     // Set the latest post request as the email status
-                                    $tokenRow->setAttribute('emailstatus', $history[0]['event']);
+                                    if($tokenRow->getAttribute('emailstatus') != 'OptOut'){
+                                        $tokenRow->setAttribute('emailstatus', $history[0]['event']);
+                                    }                                    
                                     break;
                                 }
                                 $tokenRow->setAttribute('emailhistory', serialize($emailhistory));
