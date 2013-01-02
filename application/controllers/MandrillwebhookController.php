@@ -30,7 +30,7 @@ class MandrillWebHookController extends LSYii_Controller {
                         // Criteria for the token that the post was intended for
                         try {
                             $criteria = new CDbCriteria();
-                            $criteria->condition = 'email = "' . $post['msg']['email'] . '"';
+                            $criteria->condition = 'tid = "' . $post['msg']['metadata']['tid'] . '"';
                             $tokenRow = Tokens_dynamic::model($surveyId)->find($criteria);
                             $emailhistory = unserialize($tokenRow->getAttribute('emailhistory'));
                             // Add new post request to the emailhistory array
