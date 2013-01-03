@@ -78,11 +78,11 @@ class index extends CAction {
         }
 
 
-        if ($this->_isPreviewAction($param) && !$this->_canUserPreviewSurvey($surveyid))
+        if (isset($param['action']) && (in_array($param['action'],array('previewgroup','previewquestion'))) && !$this->_canUserPreviewSurvey($surveyid))
         {
             $asMessage = array(
-            $clang->gT('Error'),
-            $clang->gT("We are sorry but you don't have permissions to do this.")
+                $clang->gT('Error'),
+                $clang->gT("We are sorry but you don't have permissions to do this.")
             );
             $this->_niceExit($redata, __LINE__, null, $asMessage);
         }
@@ -182,25 +182,27 @@ class index extends CAction {
 
             foreach($result->readAll() as $rows)
             {
-                $querylang="SELECT surveyls_title
-                FROM {{surveys_languagesettings}}
-                WHERE surveyls_survey_id={$rows['sid']}
-                AND surveyls_language='{$sDisplayLanguage}'";
-                $resultlang=Yii::app()->db->createCommand($querylang)->queryRow();
-                if ($resultlang['surveyls_title'] )
+#                $querylang="SELECT surveyls_title
+#                FROM {{surveys_languagesettings}}
+#                WHERE surveyls_survey_id={$rows['sid']}
+#                AND surveyls_language='{$sDisplayLanguage}'";
+#                $resultlang=Yii::app()->db->createCommand($querylang)->queryRow();
+                $resultlang=Surveys_languagesettings::model()->find(
+                        "surveyls_survey_id=:surveyls_survey_id AND surveyls_language=:surveyls_language",
+                        array(':surveyls_survey_id'=>intval($rows['sid']),':surveyls_language'=>$sDisplayLanguage)
+                );
+                $langparam=array();
+                $langtag = "";
+                if ($resultlang )
                 {
-                    $rows['surveyls_title']=$resultlang['surveyls_title'];
-                    $langtag = "";
+                    $rows['surveyls_title']=$resultlang->surveyls_title;
+                    $langparam=array('lang'=>$sDisplayLanguage);
                 }
                 else
                 {
                     $langtag = "lang=\"{$rows['language']}\"";
                 }
-                $link = "<li><a href='".$this->getController()->createUrl('/survey/index/sid/'.$rows['sid']);
-                if (isset($param['lang']) && $langtag=="") // TODO review with session ?
-                {
-                    $link .= "/lang-".sanitize_languagecode($param['lang']);
-                }
+                $link = "<li><a href='".$this->getController()->createUrl('/survey/index/sid/'.$rows['sid'],$langparam);
                 $link .= "' $langtag class='surveytitle'>".$rows['surveyls_title']."</a>\n";
                 if ($rows['publicstatistics'] == 'Y') $link .= "<a href='".$this->getController()->createUrl("/statistics_user/action/surveyid/".$rows['sid'])."/language/".$sDisplayLanguage."'>(".$clang->gT('View statistics').")</a>";
                 $link .= "</li>\n";
@@ -620,35 +622,22 @@ class index extends CAction {
                 }
                 buildsurveysession($surveyid);
                 loadanswers();
-            }        
+            }
         }
-
-        //        // SAVE POSTED ANSWERS TO DATABASE IF MOVE (NEXT,PREV,LAST, or SUBMIT) or RETURNING FROM SAVE FORM
-        //        if (isset($move) || isset($_POST['saveprompt']))
-        //        {
-        //            $redata = compact(array_keys(get_defined_vars()));
-        //            //save.php
-        //            Yii::import("application.libraries.Save");
-        //            $tmp = new Save();
-        //            $tmp->run($redata);
-        //
-        //            // RELOAD THE ANSWERS INCASE SOMEONE ELSE CHANGED THEM
-        //            if ($thissurvey['active'] == "Y" &&
-        //            ( $thissurvey['allowsave'] == "Y" || $thissurvey['tokenanswerspersistence'] == "Y") )
-        //            {
-        //                loadanswers();
-        //            }
-        //        }
-
-        if (isset($param['action']) && $param['action'] == 'previewgroup')
+        // Preview action : Preview right already tested before
+        if (isset($param['action']) && (in_array($param['action'],array('previewgroup','previewquestion'))))
         {
-            $thissurvey['format'] = 'G';
-            buildsurveysession($surveyid,true);
-        }
-
-        if (isset($param['action']) && $param['action'] == 'previewquestion')
-        {
-            $thissurvey['format'] = 'S';
+            // Unset all SESSION: be sure to have the last version
+            unset($_SESSION['fieldmap-' . $surveyid . $clang->langcode]);// Needed by createFieldMap: else fieldmap can be outdated
+            unset($_SESSION['survey_'.$surveyid]);
+            if ($param['action'] == 'previewgroup')
+            {
+                $thissurvey['format'] = 'G';
+            }
+            elseif ($param['action'] == 'previewquestion')
+            {
+                $thissurvey['format'] = 'S';
+            }
             buildsurveysession($surveyid,true);
         }
 
@@ -745,11 +734,6 @@ class index extends CAction {
     function _isSurveyFinished($surveyid)
     {
         return isset($_SESSION['survey_'.$surveyid]['finished']) && $_SESSION['survey_'.$surveyid]['finished'] === true;
-    }
-
-    function _isPreviewAction($param = array())
-    {
-        return isset($param['action']) && ($param['action'] == 'previewgroup' || $param['action'] == 'previewquestion');
     }
 
     function _surveyCantBeViewedWithCurrentPreviewAccess($surveyid, $bIsSurveyActive, $bSurveyExists)
