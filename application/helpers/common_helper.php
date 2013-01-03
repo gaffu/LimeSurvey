@@ -261,7 +261,7 @@ function getQuestionTypeList($SelectedCode = "T", $ReturnType = "selector")
     'assessable' => 0,
     'answerscales' => 0,
     'benchmark' => false),
-    "Z" => array('description' => $clang->gT("Custom attribute"),
+    '%' => array('description' => $clang->gT("Custom attribute"),
     'group' => $group['Tokens'],
     'subquestions' => 0,
     'hasdefaultvalues' => 0,
@@ -977,6 +977,7 @@ function getQuestionClass($input)
         case ";": return 'array-multi-flexi-text';
         case "1": return 'array-flexible-duel-scale'; //    Array dual scale
         case "*": return 'equation';    // Equation
+        case '%': return 'list-radio';    // Benchmark
         default:  return 'generic_question';    //  Should have a default fallback
     };
 };
@@ -3486,7 +3487,7 @@ function questionAttributes($returnByName=false)
     );
 
     $qattributes["statistics_showgraph"]=array(
-    'types'=>'15ABCDEFGHIKLMNOPQRSTUWXYZ!:;|*',
+    'types'=>'15ABCDEFGHIKLMNOPQRSTUWXYZ!:;|*%',
     'category'=>$clang->gT('Statistics'),
     'inputtype'=>'singleselect',
     'sortorder'=>101,
@@ -3497,7 +3498,7 @@ function questionAttributes($returnByName=false)
     );
 
     $qattributes["statistics_graphtype"]=array(
-    "types"=>'15ABCDEFGHIKLNOQRSTUWXYZ!:;|*',
+    "types"=>'15ABCDEFGHIKLNOQRSTUWXYZ!:;|*%',
     'category'=>$clang->gT('Statistics'),
     'inputtype'=>'singleselect',
     'sortorder'=>102,
@@ -3567,7 +3568,7 @@ function questionAttributes($returnByName=false)
     // End Map Options
 
     $qattributes["hide_tip"]=array(
-    "types"=>"15ABCDEFGHIKLMNOPQRSTUXY!:;|",
+    "types"=>"15ABCDEFGHIKLMNOPQRSTUXY!:;|%",
     'category'=>$clang->gT('Display'),
     'sortorder'=>100,
     'inputtype'=>'singleselect',
@@ -3578,7 +3579,7 @@ function questionAttributes($returnByName=false)
     "caption"=>$clang->gT('Hide tip'));
 
     $qattributes['hidden']=array(
-    'types'=>'15ABCDEFGHIKLMNOPQRSTUWXYZ!:;|*',
+    'types'=>'15ABCDEFGHIKLMNOPQRSTUWXYZ!:;|*%',
     'category'=>$clang->gT('Display'),
     'sortorder'=>101,
     'inputtype'=>'singleselect',
@@ -3813,7 +3814,7 @@ function questionAttributes($returnByName=false)
     "caption"=>$clang->gT("Label for 'Other:' option"));
 
     $qattributes["page_break"]=array(
-    "types"=>"15ABCDEFGHKLMNOPQRSTUWXYZ!:;|*",
+    "types"=>"15ABCDEFGHKLMNOPQRSTUWXYZ!:;|*%",
     'category'=>$clang->gT('Other'),
     'sortorder'=>100,
     'inputtype'=>'singleselect',
@@ -3833,7 +3834,7 @@ function questionAttributes($returnByName=false)
     "caption"=>$clang->gT('Answer prefix'));
 
     $qattributes["public_statistics"]=array(
-    "types"=>"15ABCEFGHKLMNOPRWYZ!:*",
+    "types"=>"15ABCEFGHKLMNOPRWYZ!:*%",
     'category'=>$clang->gT('Statistics'),
     'sortorder'=>80,
     'inputtype'=>'singleselect',
@@ -4047,7 +4048,7 @@ function questionAttributes($returnByName=false)
     "caption"=>$clang->gT('Prefix for list items'));
 
     $qattributes["scale_export"]=array(
-    "types"=>"CEFGHLMOPWYZ1!:*",
+    "types"=>"CEFGHLMOPWYZ1!:*%",
     'category'=>$clang->gT('Other'),
     'sortorder'=>100,
     'inputtype'=>'singleselect',
@@ -4319,13 +4320,13 @@ function questionAttributes($returnByName=false)
     "caption"=>$clang->gT("Allowed file types"));
 
     $qattributes["random_group"]=array(
-    "types"=>"15ABCDEFGHIKLMNOPQRSTUWXYZ!:;|",
+    "types"=>"15ABCDEFGHIKLMNOPQRSTUWXYZ!:;|%",
     'category'=>$clang->gT('Logic'),
     'sortorder'=>100,
     'inputtype'=>'text',
     "help"=>$clang->gT("Place questions into a specified randomization group, all questions included in the specified group will appear in a random order"),
     "caption"=>$clang->gT("Randomization group name"));
-
+    
     // This is added to support historical behavior.  Early versions of 1.92 used a value of "No", so if there was a min_sum_value or equals_sum_value, the question was not valid
     // unless those criteria were met.  In later releases of 1.92, the default was changed so that missing values were allowed even if those attributes were set
     // This attribute lets authors control whether missing values should be allowed in those cases without needing to set min_answers

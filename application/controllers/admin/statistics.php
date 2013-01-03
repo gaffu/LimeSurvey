@@ -420,7 +420,7 @@ class statistics extends Survey_Common_Action {
 		            $result = Questions::model()->getQuestionsForStatistics('title, question', "parent_qid = $flt[0] AND language = '$language'", 'question_order');
 		            $aData['result'][$key1] = $result;
 		            break;
-                        case "Z": // Benchmark custom token attribute
+                        case '%': // Benchmark custom token attribute
                             Survey_dynamic::sid($surveyid);
                             $criteria = new CDbCriteria();
                             $criteria->select = $surveyid.'X'.$flt[1].'X'.$flt[0].', id';

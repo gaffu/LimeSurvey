@@ -202,7 +202,7 @@
                 $previousquestiontype == "Q" ||
                 $previousquestiontype == "R" ||
                 $previousquestiontype == ":" ||
-                $previousquestiontype == "Z" ||
+                $previousquestiontype == '%' ||
                 $previousquestiontype == ";")) { ?>
             </tr>
             <tr>
@@ -1240,7 +1240,7 @@
 
                     echo "\t</select>\n\t</td>\n";
                     break;
-                case "Z":
+                case '%':
                     echo "\t</tr>\n\t<tr>\n";
                     echo '
                                 <td>';
