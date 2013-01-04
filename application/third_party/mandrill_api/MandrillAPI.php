@@ -24,6 +24,11 @@ class MandrillAPI {
      * @return string respons from mandrill
      */
     function callAPI($url, $data) {
+        // Check if curl is installed, if not throw exception
+        if (!function_exists('curl_version') == 'Enabled' ){
+            throw new Exception('cURL is required to send emails through Mandrill, but cURL is not installed!');
+        }
+        
         $url = $this->baseURL . $url;
         $data = json_encode($data);
 
