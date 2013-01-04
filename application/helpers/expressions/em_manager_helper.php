@@ -3333,14 +3333,14 @@
             {
                 foreach (array_keys($_SESSION[$this->sessid]['thistoken']) as $tokenkey)
                 {
-                    if ($anonymized)
-                    {
-                        $val = "";
-                    }
-                    else
-                    {
+//                    if ($anonymized)
+//                    {
+//                        $val = "";
+//                    }
+//                    else
+//                    {
                         $val = $_SESSION[$this->sessid]['thistoken'][$tokenkey];
-                    }
+//                    }
                     $key = "TOKEN:" . strtoupper($tokenkey);
                     $this->knownVars[$key] = array(
                     'code'=>$val,
