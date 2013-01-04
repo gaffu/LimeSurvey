@@ -1213,7 +1213,7 @@ EOD;
     public function tokenCustomAttribute($surveyid, $gid, $qid) {
         // Get record if it exist
         $criteria = new CDbCriteria;
-        $criteria->condition = 'qid = ' . $qid . ' && attribute="Token benchmark"';
+        $criteria->condition = 'qid = ' . $qid . ' && attribute="token_benchmark"';
 
         // Set benchmark attribute
         if (!empty($_POST)) {
@@ -1227,7 +1227,7 @@ EOD;
                     // else insert new row if not empty
                     $aData['value'] = $_POST['attribute'];
                     $aData['qid'] = $qid;
-                    $aData['attribute'] = 'Token benchmark';
+                    $aData['attribute'] = 'token_benchmark';
                     $result = Question_attributes::model()->insertRecords($aData);
                 }
             }

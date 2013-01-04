@@ -6699,7 +6699,7 @@ function doTokenCustomAttribute($ia, $surveyId){
     // Fetch token field
     $criteria = new CDbCriteria;
     $criteria->select = 'value';
-    $criteria->condition = 'qid = '.$ia[0].' && attribute = "Token benchmark"';
+    $criteria->condition = 'qid = '.$ia[0].' && attribute = "token_benchmark"';
     $qAttribute = Question_attributes::model()->find($criteria)->getAttribute('value');
 
     // Fetch custom attribute value

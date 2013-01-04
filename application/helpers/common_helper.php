@@ -4325,7 +4325,16 @@ function questionAttributes($returnByName=false)
     'sortorder'=>100,
     'inputtype'=>'text',
     "help"=>$clang->gT("Place questions into a specified randomization group, all questions included in the specified group will appear in a random order"),
-    "caption"=>$clang->gT("Randomization group name"));
+    "caption"=>$clang->gT("Randomization group name"));   
+    
+    $qattributes["token_benchmark"] = array(
+        "types"=>"%",
+        'category'=>$clang->gT('Logic'),
+        'sortorder'=>100,
+        'inputtype'=>'text',
+        "help"=>$clang->gT("Set which attribute to use for the answer"),
+        "caption"=>$clang->gT('Custom token attribute')
+    );
     
     // This is added to support historical behavior.  Early versions of 1.92 used a value of "No", so if there was a min_sum_value or equals_sum_value, the question was not valid
     // unless those criteria were met.  In later releases of 1.92, the default was changed so that missing values were allowed even if those attributes were set
