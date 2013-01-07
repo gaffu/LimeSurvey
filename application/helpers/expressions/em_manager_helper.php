@@ -3333,14 +3333,16 @@
             {
                 foreach (array_keys($_SESSION[$this->sessid]['thistoken']) as $tokenkey)
                 {
-//                    if ($anonymized)
-//                    {
-//                        $val = "";
-//                    }
-//                    else
-//                    {
+                    // Allow additional attribute fields (from token table) to be visible
+                    // even when the survey is set to anonymous
+                    if ($anonymized && substr($tokenkey, 0, 10) != 'attribute_')
+                    {
+                        $val = "";
+                    }
+                    else
+                    {
                         $val = $_SESSION[$this->sessid]['thistoken'][$tokenkey];
-//                    }
+                    }
                     $key = "TOKEN:" . strtoupper($tokenkey);
                     $this->knownVars[$key] = array(
                     'code'=>$val,
