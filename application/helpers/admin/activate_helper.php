@@ -147,7 +147,7 @@ function checkQuestions($postsid, $iSurveyID, $qtypes)
         $failedcheck[]=array($chkrow['qid'], $chkrow['question'], ": ".$clang->gT("This question does not have a question 'type' set."), $chkrow['gid']);
     }
 
-
+    
 
 
     //Check that certain array question types have answers set
@@ -233,6 +233,21 @@ function checkQuestions($postsid, $iSurveyID, $qtypes)
             $failedcheck[]=array($badquestion['qid'], $badquestion['question'], ": Bad duplicate fieldname $fix", $badquestion['gid']);
         }
     }
+    
+    //Check custom token attribute has an attribute set
+    $chkquery = "SELECT {{questions}}.gid, {{questions}}.question, {{questions}}.type,  {{question_attributes}}.qid,  {{question_attributes}}.attribute, {{questions}}.qid
+            FROM {{questions}}
+            LEFT JOIN {{question_attributes}}
+            ON {{questions}}.qid = {{question_attributes}}.qid
+            where {{questions}}.sid = {$iSurveyID} and {{questions}}.type = '%'";
+    $chkresult = Yii::app()->db->createCommand($chkquery)->query()->readAll();
+    foreach ($chkresult as $chkrow)
+    {
+        if($chkrow['attribute'] === null){
+            $failedcheck[]=array($chkrow['qid'], $chkrow['question'], ": ".$clang->gT("This question does not have a custom token attribute set."), $chkrow['gid']);
+        }        
+    }
+    
     if(isset($failedcheck))
         return $failedcheck;
     else
