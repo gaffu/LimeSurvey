@@ -978,7 +978,7 @@ function getQuestionClass($input)
         case ";": return 'array-multi-flexi-text';
         case "1": return 'array-flexible-duel-scale'; //    Array dual scale
         case "*": return 'equation';    // Equation
-        case '%': return 'list-radio';    // Benchmark
+        case '%': return 'benchmark';    // Benchmark
         default:  return 'generic_question';    //  Should have a default fallback
     };
 };

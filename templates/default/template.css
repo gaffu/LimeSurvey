@@ -779,13 +779,13 @@ table.clearall-result td {
 ,.array-flexible-duel-scale
 */ /* - - -  - - -  - - -  - - - - - -  - - -  - - - -
    START: General list styles - - -  - - -  - - - - */
-.choice-5-pt-radio .answer ul,.list-radio-flexible .answer ul,.list-radio .answer ul,.list-with-comment .answer ul,.multiple-opt .answer ul,.multiple-opt-comments .answer ul,.multiple-short-txt .answer ul,.numeric-multi .answer ul,.yes-no .answer ul,.gender .answer ul
+.choice-5-pt-radio .answer ul,.list-radio-flexible .answer ul,.list-radio .answer ul,.list-with-comment .answer ul,.multiple-opt .answer ul,.multiple-opt-comments .answer ul,.multiple-short-txt .answer ul,.numeric-multi .answer ul,.yes-no .answer ul,.gender .answer ul, .benchmark .answer ul
   {
   margin-left: 0%;
   padding-left: 0%;
 }
 
-.choice-5-pt-radio .answer li,.list-radio-flexible .answer li,.list-radio .answer li,.list-with-comment .answer li,.multiple-opt .answer li,.multiple-opt-comments .answer li,.multiple-short-txt .answer li,.numeric-multi .answer li,.yes-no .answer li,.gender .answer li
+.choice-5-pt-radio .answer li,.list-radio-flexible .answer li,.list-radio .answer li,.list-with-comment .answer li,.multiple-opt .answer li,.multiple-opt-comments .answer li,.multiple-short-txt .answer li,.numeric-multi .answer li,.yes-no .answer li,.gender .answer li, .benchmark .answer li
   {
   list-style-type: none;
   text-align: left;
@@ -876,18 +876,18 @@ table.clearall-result td {
 .list-radio
 */
 .list-radio .answer li label,
-.list-with-comment .answer li label {
+.list-with-comment .answer li label, .benchmark .answer li label, {
   display: inline-block;
   width: 85%;
 }
 
 .list-radio .answer li.other-item label,
-.list-with-comment .answer li.other-item label {
+.list-with-comment .answer li.other-item label, .benchmark .answer li.other-item label {
   width: auto;
 }
 
 .list-radio .answer li input,
-.list-with-comment .answer li input {
+.list-with-comment .answer li input, .benchmark .answer li input {
   vertical-align: top !important;
   margin-top: 2px;
   *margin-top: -2px; /* IE7 and below */
