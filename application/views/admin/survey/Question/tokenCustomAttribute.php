@@ -16,11 +16,13 @@
 
                             $select = ' selected="selected"';
                         }
-                        echo '<option value="' . $k . '"' . $select . '>' . $att['description'] . '</option>';
+                        echo '<option'.$disabled.' value="' . $k . '"' . $select . '>' . $att['description'] . '</option>';
                     };
                     ?>
-                </select>   
+                </select> 
+                <?php if(empty($disabled)){ ?>
                 <input type='submit' value='<?php $clang->eT('Save') ?>'/></p>
+            <?php }?>
             </form>
         </div>
     </div>

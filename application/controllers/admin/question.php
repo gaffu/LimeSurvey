@@ -1214,21 +1214,29 @@ EOD;
         // Get record if it exist
         $criteria = new CDbCriteria;
         $criteria->condition = 'qid = ' . $qid . ' && attribute="token_benchmark"';
-
+        $disabled = '';
+        $surveyExists=($surveyid && Survey::model()->findByPk($surveyid));
+        $isSurveyActive=($surveyExists && Survey::model()->findByPk($surveyid)->active=="Y");
+        // If survey is active do not allow changes to the question
+        if($isSurveyActive){
+            $disabled = ' disabled="disabled"';
+        }
         // Set benchmark attribute
-        if (!empty($_POST)) {
-            $record = Question_attributes::model()->find($criteria);
-            // If question attribute exist, update it
-            if ($record) {
-                $record->setAttribute('value', $_POST['attribute']);
-                $record->save();
-            } else {
-                if (!empty($_POST['attribute'])) {
-                    // else insert new row if not empty
-                    $aData['value'] = $_POST['attribute'];
-                    $aData['qid'] = $qid;
-                    $aData['attribute'] = 'token_benchmark';
-                    $result = Question_attributes::model()->insertRecords($aData);
+        if (!empty($_POST)) {            
+            if(!$isSurveyActive){
+                $record = Question_attributes::model()->find($criteria);
+                // If question attribute exist, update it
+                if ($record) {
+                    $record->setAttribute('value', $_POST['attribute']);
+                    $record->save();
+                } else {
+                    if (!empty($_POST['attribute'])) {
+                        // else insert new row if not empty
+                        $aData['value'] = $_POST['attribute'];
+                        $aData['qid'] = $qid;
+                        $aData['attribute'] = 'token_benchmark';
+                        $result = Question_attributes::model()->insertRecords($aData);
+                    }
                 }
             }
         }
@@ -1277,7 +1285,8 @@ EOD;
             'gid' => $gid,
             'qtproperties' => $qtproperties,
             'baselang' => $baselang,
-            'selected' => $selected
+            'selected' => $selected,
+            'disabled' => $disabled
         );
         $aData['display']['menu_bars']['surveysummary'] = 'editdefaultvalues';
         $aData['display']['menu_bars']['qid_action'] = 'editdefaultvalues';
