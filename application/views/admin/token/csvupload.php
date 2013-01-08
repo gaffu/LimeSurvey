@@ -29,8 +29,7 @@
         </li>
         <li id='lifilterduplicatefields'>
             <label for='filterduplicatefields'><?php $clang->eT("Duplicates are determined by:"); ?></label>
-            <?php
-                $aFilterDuplicateFields = array('firstname' => 'firstname', 'lastname' => 'lastname', 'email' => 'email', 'token' => 'token', 'language' => 'language');
+            <?php                
                 array_merge($aFilterDuplicateFields, getAttributeFieldNames($iSurveyId));
                 echo CHtml::listBox('filterduplicatefields', array('firstname', 'lastname', 'email'), $aFilterDuplicateFields, array('multiple' => 'multiple', 'size' => '5'));
             ?>

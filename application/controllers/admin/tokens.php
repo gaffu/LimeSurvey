@@ -1814,6 +1814,17 @@ class tokens extends Survey_Common_Action
         , "ujis" => $clang->gT("EUC-JP Japanese")
         , "utf8" => $clang->gT("UTF-8 Unicode"));
 
+        // Set which fields that can be used to determin duplicates
+        $aFilterDuplicateFields = array('firstname' => 'firstname', 'lastname' => 'lastname', 'email' => 'email', 'token' => 'token', 'language' => 'language');
+        // Fetch token additional attribute fields
+        $aSurvey = getSurveyInfo($iSurveyId);
+        $aCustomAttributes = $aSurvey['attributedescriptions'];
+        // Add additional token attributes to duplicate filter
+        foreach($aCustomAttributes as $attribute => $v){
+            $aFilterDuplicateFields[$attribute] = $v['description'];
+        }
+        $aData['aFilterDuplicateFields'] = $aFilterDuplicateFields;
+        
         if (Yii::app()->request->getPost('submit'))
         {
             if (Yii::app()->request->getPost('csvcharset') && Yii::app()->request->getPost('csvcharset'))  //sanitize charset - if encoding is not found sanitize to 'auto'
