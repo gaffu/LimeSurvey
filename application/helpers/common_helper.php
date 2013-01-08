@@ -4330,6 +4330,7 @@ function questionAttributes($returnByName=false)
     
     $qattributes["token_benchmark"] = array(
         "types"=>"%",
+        'readonly_when_active'=>true,
         'category'=>$clang->gT('Logic'),
         'sortorder'=>100,
         'inputtype'=>'text',
