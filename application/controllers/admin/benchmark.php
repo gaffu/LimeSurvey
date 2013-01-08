@@ -258,8 +258,8 @@ class Benchmark extends Survey_Common_Action {
             $startRow = $xlsRow+1;
             $doAverage = array();
             // Loop through all the responses for the selected benchmark value
-            foreach ($v['responses'] as $respons) {                
-                $columnCount = 1;
+            foreach ($v['responses'] as $respons) {               
+                $columnCount = 1;                
                 // For each respons write their answer
                 // If quesetion has answers stored in the answers table
                 // then replace the answer with the given value from the answers table
@@ -276,7 +276,10 @@ class Benchmark extends Survey_Common_Action {
                         $ans = $answer;                        
                     }
                     if(!is_numeric($ans) && !empty($ans)){
-                        $doAverage[$columnCount] = false;
+                        $doAverage[$columnCount]['valid'] = false;
+                    }
+                    if(!empty($ans)){
+                        $doAverage[$columnCount]['gotData'] = true;
                     }
                     $sheet->write($xlsRow, $columnCount, $ans);
                     $columnCount++;
@@ -285,7 +288,7 @@ class Benchmark extends Survey_Common_Action {
             }
             // Do avarage calculation on each answer if it is allowed
             for ($i = 1; $i < $columnCount; $i++) {
-                if(!isset($doAverage[$i])){
+                if(!isset($doAverage[$i]['valid']) && isset($doAverage[$i]['gotData'])){
                     $column = $this->numtochars($i+1);
                     $sheet->write($xlsRow, $i, '=AVERAGE('.$column.$startRow.':'.$column.$xlsRow.')', $format_2decimals);
                 }                
