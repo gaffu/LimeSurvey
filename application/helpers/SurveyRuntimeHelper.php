@@ -747,9 +747,9 @@ class SurveyRuntimeHelper {
                 ++$_SESSION[$LEMsessid]['stepno'];
             if ($_SESSION[$LEMsessid]['stepno'] % 2)
             {
-                echo "<script type=\"text/javascript\">\n"
-                . "  $(\"body\").addClass(\"page-odd\");\n"
-                . "</script>\n";
+                //echo "<script type=\"text/javascript\">\n"
+                //. "  $(\"body\").addClass(\"page-odd\");\n"
+                //. "</script>\n";
             }
         }
 
