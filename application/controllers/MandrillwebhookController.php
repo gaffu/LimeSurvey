@@ -19,7 +19,7 @@ class MandrillWebHookController extends LSYii_Controller {
             foreach ($posts as $post) {
                 try {
                     // Make sure it is a webhook intended for Limesurvey
-                    if (isset($post['msg']['tags'])) {
+                    if (isset($post['msg']['tags'][0]) && isset($post['msg']['tags'][1])) {
                         if ($post['msg']['tags'][0] == 'limesurvey' || substr($post['msg']['tags'][0], 0, 6) == 'Survey') {
                             if ($post['msg']['tags'][1] == 'limesurvey' || substr($post['msg']['tags'][1], 0, 6) == 'Survey') {
                                 if ($post['msg']['tags'][0] == 'limesurvey') {
@@ -32,20 +32,22 @@ class MandrillWebHookController extends LSYii_Controller {
                                 $criteria = new CDbCriteria();
                                 $criteria->condition = 'tid = "' . $post['msg']['metadata']['tid'] . '"';
                                 $tokenRow = Tokens_dynamic::model($surveyId)->find($criteria);
-                                $emailhistory = unserialize($tokenRow->getAttribute('emailhistory'));
-                                // Add new post request to the emailhistory array
-                                $emailhistory[$post['ts']][] = $post;
-                                // sort it so the newest is at the start of the array
-                                krsort($emailhistory);
-                                foreach ($emailhistory as $history) {
-                                    // Set the latest post request as the email status
-                                    if($tokenRow->getAttribute('emailstatus') != 'OptOut'){
-                                        $tokenRow->setAttribute('emailstatus', $history[0]['event']);
-                                    }                                    
-                                    break;
+                                if (!empty($tokenRow)) {
+                                    $emailhistory = unserialize($tokenRow->getAttribute('emailhistory'));
+                                    // Add new post request to the emailhistory array
+                                    $emailhistory[$post['ts']][] = $post;
+                                    // sort it so the newest is at the start of the array
+                                    krsort($emailhistory);
+                                    foreach ($emailhistory as $history) {
+                                        // Set the latest post request as the email status
+                                        if ($tokenRow->getAttribute('emailstatus') != 'OptOut') {
+                                            $tokenRow->setAttribute('emailstatus', $history[0]['event']);
+                                        }
+                                        break;
+                                    }
+                                    $tokenRow->setAttribute('emailhistory', serialize($emailhistory));
+                                    $tokenRow->save();
                                 }
-                                $tokenRow->setAttribute('emailhistory', serialize($emailhistory));
-                                $tokenRow->save();
                             }
                         }
                     }
