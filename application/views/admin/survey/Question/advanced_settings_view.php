@@ -23,9 +23,9 @@
                     if ($aAttribute['readonly'] && $bIsActive)
                     {
                         echo $aAttribute['value'];
+                        $aAttribute['inputtype'] = 'hidden';                        
                     }
-                    else
-                    {
+                    
                         switch ($aAttribute['inputtype']){
                             case 'singleselect':    echo "<select id='{$aAttribute['name']}' name='{$aAttribute['name']}'>";
                                 foreach($aAttribute['options'] as $sOptionvalue=>$sOptiontext)
@@ -48,8 +48,11 @@
                             case 'textarea':?> <textarea id='<?php echo $aAttribute['name'];?>' name='<?php echo $aAttribute['name'];?>'><?php echo $aAttribute['value'];?></textarea>
                             <?php
                                 break;
+                            case 'hidden':?> <input type='hidden' id='<?php echo $aAttribute['name'];?>' name='<?php echo $aAttribute['name'];?>' value='<?php echo $aAttribute['value'];?>' />
+                            <?php 
+                            break;
                         }
-                }?>
+                ?>
             </li>
             <?php }?>
     </ul></fieldset>
