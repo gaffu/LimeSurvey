@@ -49,11 +49,16 @@ class Benchmark extends Survey_Common_Action {
                 }
             }
         }
-        $benchmarkTypeCondition .= ') AND sid = ' . $iSurveyId;
+        $benchmarkTypeCondition .= ') AND sid = ' . $iSurveyId.' AND language = "';
+        if(array_key_exists($clang->langcode, $aData['langauges'])){
+            $benchmarkTypeCondition .= $clang->langcode;
+        }else{
+            $benchmarkTypeCondition .= $aData['langauges'][reset($aData['langauges'])];
+        }
+        $benchmarkTypeCondition .= '"';
 
-        // Fetch distinct questions (based on qid to avoid duplicate entries
-        // across different languages).
-        $criteria->select = 'DISTINCT qid, title, question';
+        // Fetch questions
+        $criteria->select = 'qid, title, question';
         $criteria->condition = $benchmarkTypeCondition;
         $qRows = Questions::model()->findAll($criteria);
         $temp = CHtml::listData($qRows, 'qid', 'question');
