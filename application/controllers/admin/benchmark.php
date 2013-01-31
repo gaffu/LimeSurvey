@@ -50,6 +50,8 @@ class Benchmark extends Survey_Common_Action {
             }
         }
         $benchmarkTypeCondition .= ') AND sid = ' . $iSurveyId.' AND language = "';
+        // Set language to the user's language if question does not support
+        // the user's language set it to the first occurence in the language array
         if(array_key_exists($clang->langcode, $aData['langauges'])){
             $benchmarkTypeCondition .= $clang->langcode;
         }else{
