@@ -35,6 +35,12 @@ class index extends CAction {
         Yii::app()->setConfig('surveyID',$surveyid);
         $thisstep = $param['thisstep'];
         $move = $param['move'];
+        if($param['token'] == null){
+            if(isset($_SESSION['survey_'.$surveyid]['token']) && !empty($_SESSION['survey_'.$surveyid]['token'])){
+                $param['token'] = $_SESSION['survey_'.$surveyid]['token'];
+                $_REQUEST['token'] = $_SESSION['survey_'.$surveyid]['token'];
+            }
+        }
         $clienttoken = $param['token'];
         $standardtemplaterootdir = Yii::app()->getConfig('standardtemplaterootdir');
         if (is_null($thissurvey) && !is_null($surveyid)) $thissurvey = getSurveyInfo($surveyid);
