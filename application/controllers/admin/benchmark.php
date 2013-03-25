@@ -145,9 +145,7 @@ class Benchmark extends Survey_Common_Action {
             $condition = 'submitdate is NOT null';
         }elseif($completionstate == 'incomplete'){
             $condition = 'submitdate is null';
-        }
-        
-        //$condition .= ' order by '.$iSurveyId.'X'.$bqid;
+        }        
 
         Survey_dynamic::sid($iSurveyId);
         $responses = Survey_dynamic::model()->findAllAsArray($condition);
@@ -179,7 +177,10 @@ class Benchmark extends Survey_Common_Action {
                 }
             }
         }
+        
+        // Sort responses by benchmark
         asort($statistics);
+        
         // Fetch survey title and description
         $criteriaSurveyInfo = new CDbCriteria;
         $criteriaSurveyInfo->select = 'surveyls_title, surveyls_description';
