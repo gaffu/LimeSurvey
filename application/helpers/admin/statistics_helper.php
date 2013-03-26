@@ -1535,9 +1535,19 @@ class statistics_helper {
                     $qtitle = $qtitle." [".$sSubquestion."][".$labelno."]";
                     $qquestion  = $qastring .$labelheader;
                     break;
-
-
-
+                case '%':
+                    $criteria = new CDbCriteria();
+                    $criteria->select = 'value';
+                    $criteria->condition = 'qid = '.$qiqid;
+                    $tokenAttribute = Question_attributes::model()->find($criteria)->getAttribute('value');
+                    Tokens_dynamic::sid($surveyid); 
+                    $criteria->select = 'distinct '.$tokenAttribute;
+                    $criteria->condition = '';
+                    $attributes = Tokens_dynamic::model()->findAllAsArray($criteria);
+                    foreach ($attributes as $attribute){
+                        $alist[] = array($attribute[$tokenAttribute],$attribute[$tokenAttribute]);                        
+                    }
+                    break;
 
                 default:    //default handling
 
@@ -1712,7 +1722,7 @@ class statistics_helper {
                 {
                     $query = "SELECT count(*) FROM {{survey_$surveyid}} WHERE ( ";
                     $query .= ($sDatabaseType == "mysql")?  Yii::app()->db->quoteColumnName($al[2])." <> '')" : " (".Yii::app()->db->quoteColumnName($al[2])." NOT LIKE ''))";
-                    // all other question types
+                    // all other question types   
                 }
                 else
                 {
@@ -1743,7 +1753,7 @@ class statistics_helper {
                     }
                     else
                         $query = "SELECT count(*) FROM {{survey_$surveyid}} WHERE " . Yii::app()->db->quoteColumnName($rt)." = '$al[0]'";
-                }
+                }                
                 else
                 { // This is for the 'NoAnswer' case
                     // We need to take into account several possibilities
