@@ -179,7 +179,7 @@ class Benchmark extends Survey_Common_Action {
         }
         
         // Sort responses by benchmark
-        asort($statistics);
+        ksort($statistics);
         
         // Fetch survey title and description
         $criteriaSurveyInfo = new CDbCriteria;
