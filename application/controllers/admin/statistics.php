@@ -424,6 +424,7 @@ class statistics extends Survey_Common_Action {
                             Survey_dynamic::sid($surveyid);
                             $criteria = new CDbCriteria();
                             $criteria->select = $surveyid.'X'.$flt[1].'X'.$flt[0].', id';
+                            $criteria->order = $surveyid.'X'.$flt[1].'X'.$flt[0];
                             $records = Survey_dynamic::model()->findAll($criteria);
                             $result = CHtml::listData( $records, $surveyid.'X'.$flt[1].'X'.$flt[0], 'id');
                             $aData['result'][$key1] = array_keys($result);
