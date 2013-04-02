@@ -115,26 +115,29 @@ class Benchmark extends Survey_Common_Action {
 
         // combine questions and answers (from answers table) in an array
         foreach ($rows as $row) {
-            $qid = $row->getAttribute('qid');
-            $attributes = $row->getAttributes();
-            /* Crazy hack to solve faulty database design. If question has parent
-             * then there is a slight possibility that it will be impossible to start
-             * a new survey. This is based on that the dynamic survey question fields
-             * are created by concat parent_id with title. If the qid was used
-             * consistently this would not be necessary.
-             */
-            if ($attributes['parent_qid'] != 0) {
-                $nqid = $attributes['parent_qid'] . $attributes['title'];
-            } else {
-                $nqid = $qid;
-            }
-            $qa[$nqid] = $attributes;
-            $relatedRows = $row->getRelated('answers');
-            foreach ($relatedRows as $relatedRow) {
-                // Only take the answers with the selected langauage
-                // Yii sqrews up the join so it takes all languages
-                if ($relatedRow->getAttribute('language') == $language) {
-                    $qa[$nqid]['answers'][$relatedRow->getAttribute('code')] = $relatedRow->getAttributes();
+            // Use the language specified by the post request for displaying results
+            if($row->getAttribute('language') == $language){
+                $qid = $row->getAttribute('qid');
+                $attributes = $row->getAttributes();
+                /* Crazy hack to solve faulty database design. If question has parent
+                 * then there is a slight possibility that it will be impossible to start
+                 * a new survey. This is based on that the dynamic survey question fields
+                 * are created by concat parent_id with title. If the qid was used
+                 * consistently this would not be necessary.
+                 */
+                if ($attributes['parent_qid'] != 0) {
+                    $nqid = $attributes['parent_qid'] . $attributes['title'];
+                } else {
+                    $nqid = $qid;
+                }
+                $qa[$nqid] = $attributes;
+                $relatedRows = $row->getRelated('answers');
+                foreach ($relatedRows as $relatedRow) {
+                    // Only take the answers with the selected langauage
+                    // Yii sqrews up the join so it takes all languages
+                    if ($relatedRow->getAttribute('language') == $language) {
+                        $qa[$nqid]['answers'][$relatedRow->getAttribute('code')] = $relatedRow->getAttributes();
+                    }
                 }
             }
         }
