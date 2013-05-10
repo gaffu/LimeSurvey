@@ -271,6 +271,7 @@ class Benchmark extends Survey_Common_Action {
         
         $format_aggregated_average =& $workbook->addFormat(array('top' => 5, 'pattern' => 1, 'bordercolor' => 'black'));
         $format_aggregated_average->setBold();
+        $format_aggregated_average->setNumFormat("0.00");
 
         // used for writting question text on responses sheet
         $questionRow = true;
