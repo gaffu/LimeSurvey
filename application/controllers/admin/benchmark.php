@@ -261,9 +261,16 @@ class Benchmark extends Survey_Common_Action {
         $format_percentage->setNumFormat("0.00%");
 
         // Set 2 decimals format (bold)
+        $format_bold_2decimals = & $workbook->addFormat();
+        $format_bold_2decimals->setNumFormat("0.00");
+        $format_bold_2decimals->setBold();
+        
+        // Set 2 decimals format ( no bold)
         $format_2decimals = & $workbook->addFormat();
         $format_2decimals->setNumFormat("0.00");
-        $format_2decimals->setBold();
+        
+        $format_aggregated_average =& $workbook->addFormat(array('top' => 5, 'pattern' => 1, 'bordercolor' => 'black'));
+        $format_aggregated_average->setBold();
 
         // used for writting question text on responses sheet
         $questionRow = true;
@@ -327,7 +334,7 @@ class Benchmark extends Survey_Common_Action {
             for ($i = 1; $i < $columnCount; $i++) {
                 if (!isset($doAverage[$i]['valid']) && isset($doAverage[$i]['gotData'])) {
                     $column = $this->numtochars($i + 1);
-                    $sheet->write($xlsRow, $i, '=AVERAGE(' . $column . $startRow . ':' . $column . $xlsRow . ')', $format_2decimals);
+                    $sheet->write($xlsRow, $i, '=AVERAGE(' . $column . $startRow . ':' . $column . $xlsRow . ')', $format_bold_2decimals);
                     // Excel writer does not support referring other sheets, so hardcode avarage values on sheet3 
                     $avarage = array_sum($values[$i]) / count($values[$i]);                    
                     $sheet3->write($xlsRow3, $i, $avarage, $format_2decimals);
@@ -374,9 +381,10 @@ class Benchmark extends Survey_Common_Action {
             $xlsRow3++;
         }
         // Write aggregated avarages on sheet 3
+        $sheet3->write($xlsRow3, 0, 'Total (average):', $format_aggregated_average);
         for($i = 1; $i < $questionColumn; $i++){
             $column = $this->numtochars($i+1);
-            $sheet3->write($xlsRow3, $i, '=AVERAGE(' . $column . $startRow3 . ':' . $column . $xlsRow3 . ')', $format_2decimals);
+            $sheet3->write($xlsRow3, $i, '=AVERAGE(' . $column . $startRow3 . ':' . $column . $xlsRow3 . ')', $format_aggregated_average);
         }
             
         $workbook->send($filename);
