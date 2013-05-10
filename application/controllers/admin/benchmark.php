@@ -49,12 +49,12 @@ class Benchmark extends Survey_Common_Action {
                 }
             }
         }
-        $benchmarkTypeCondition .= ') AND sid = ' . $iSurveyId.' AND language = "';
+        $benchmarkTypeCondition .= ') AND sid = ' . $iSurveyId . ' AND language = "';
         // Set language to the user's language if question does not support
         // the user's language set it to the first occurence in the language array
-        if(array_key_exists($clang->langcode, $aData['langauges'])){
+        if (array_key_exists($clang->langcode, $aData['langauges'])) {
             $benchmarkTypeCondition .= $clang->langcode;
-        }else{
+        } else {
             $benchmarkTypeCondition .= $aData['langauges'][reset($aData['langauges'])];
         }
         $benchmarkTypeCondition .= '"';
@@ -84,9 +84,9 @@ class Benchmark extends Survey_Common_Action {
         $completionstate = $_POST['completionstate'];
         $language = $_POST['language'];
         $bqid = $_POST['bqid']; // The qid for benchmarking
-        if(isset($_POST['useCodes']) && $_POST['useCodes'] == 1){
+        if (isset($_POST['useCodes']) && $_POST['useCodes'] == 1) {
             $useCodes = true;
-        }else{
+        } else {
             $useCodes = false;
         }
 
@@ -116,7 +116,7 @@ class Benchmark extends Survey_Common_Action {
         // combine questions and answers (from answers table) in an array
         foreach ($rows as $row) {
             // Use the language specified by the post request for displaying results
-            if($row->getAttribute('language') == $language){
+            if ($row->getAttribute('language') == $language) {
                 $qid = $row->getAttribute('qid');
                 $attributes = $row->getAttributes();
                 /* Crazy hack to solve faulty database design. If question has parent
@@ -141,14 +141,14 @@ class Benchmark extends Survey_Common_Action {
                 }
             }
         }
-        
+
         // Condition for filtering all, complete or incomplete responses
         $condition = '';
-        if($completionstate == 'complete'){
+        if ($completionstate == 'complete') {
             $condition = 'submitdate is NOT null';
-        }elseif($completionstate == 'incomplete'){
+        } elseif ($completionstate == 'incomplete') {
             $condition = 'submitdate is null';
-        }        
+        }
 
         Survey_dynamic::sid($iSurveyId);
         $responses = Survey_dynamic::model()->findAllAsArray($condition);
@@ -180,14 +180,14 @@ class Benchmark extends Survey_Common_Action {
                 }
             }
         }
-        
+
         // Sort responses by benchmark
         ksort($statistics);
-        
+
         // Fetch survey title and description
         $criteriaSurveyInfo = new CDbCriteria;
         $criteriaSurveyInfo->select = 'surveyls_title, surveyls_description';
-        $criteriaSurveyInfo->condition = 'surveyls_survey_id ='.$iSurveyId.' AND surveyls_language = "'.$language.'"';
+        $criteriaSurveyInfo->condition = 'surveyls_survey_id =' . $iSurveyId . ' AND surveyls_language = "' . $language . '"';
         $surveyInfo = Surveys_languagesettings::model()->find($criteriaSurveyInfo)->getAttributes();
 
         $this->writeExcel($iSurveyId, $statistics, $qa, $surveyInfo, $useCodes);
@@ -210,7 +210,8 @@ class Benchmark extends Survey_Common_Action {
         $workbook->setTempDir($tempdir);
 
         // Create the first worksheet (used for responses)
-        $sheet = $workbook->addWorksheet(utf8_decode('responses-survey' . $iSurveyId));
+        $sheetTitle = utf8_decode('responses-survey' . $iSurveyId);
+        $sheet = $workbook->addWorksheet($sheetTitle);
         $sheet->setInputEncoding('utf-8');
         $sheet->setColumn(0, 20, 20);
         $xlsRow = 0;
@@ -223,6 +224,12 @@ class Benchmark extends Survey_Common_Action {
 
         $xlsTitle = html_entity_decode($surveyInfo['surveyls_title'], ENT_QUOTES, 'UTF-8');
         $xlsDesc = html_entity_decode($surveyInfo['surveyls_description'], ENT_QUOTES, 'UTF-8');
+
+        // create the third worksheet (used for aggregated statistics)
+        $sheet3 = $workbook->addWorksheet(utf8_decode('Aggregated responses' . $iSurveyId));
+        $sheet3->setInputEncoding('utf-8');
+        $sheet3->setColumn(0, 20, 20);
+        $xlsRow3 = 0;
 
         // Write title and description on sheet 1
         $sheet->write($xlsRow, 0, $xlsTitle);
@@ -238,83 +245,103 @@ class Benchmark extends Survey_Common_Action {
         $xlsRow2++;
         $xlsRow2++;
         
+        // Write title and description on sheet 3
+        $sheet3->write($xlsRow3, 0, $xlsTitle);
+        $xlsRow3++;
+        $sheet3->write($xlsRow3, 0, $xlsDesc);
+        $xlsRow3++;
+        $xlsRow3++;
+
         // Set bold format
-        $format_bold =& $workbook->addFormat();
+        $format_bold = & $workbook->addFormat();
         $format_bold->setBold();
-        
+
         // Set percentage format
-        $format_percentage =& $workbook->addFormat();
+        $format_percentage = & $workbook->addFormat();
         $format_percentage->setNumFormat("0.00%");
-        
+
         // Set 2 decimals format (bold)
-        $format_2decimals =& $workbook->addFormat();
+        $format_2decimals = & $workbook->addFormat();
         $format_2decimals->setNumFormat("0.00");
         $format_2decimals->setBold();
-        
+
         // used for writting question text on responses sheet
         $questionRow = true;
         $questionColumn = 1;
-        
+
         // Write info text on summary sheet
-        $sheet2->write(2, 1, 'Question',$format_bold);
+        $sheet2->write(2, 1, 'Question', $format_bold);
         $sheet2->write(2, 2, 'Answer', $format_bold);
         $sheet2->write(2, 3, 'Count', $format_bold);
         $sheet2->write(2, 4, 'Percentage', $format_bold);
         
+        // Set start row for outputting avarages
+        $startRow3 = $xlsRow3 + 1;
+
         // Loop through all the benchmark values
         foreach ($statistics as $benchmark => $v) {
             $responsesCount = count($v['responses']);
             // write benchmark info on both pages
             $sheet->write($xlsRow, 0, $benchmark, $format_bold);
             $sheet2->write($xlsRow2, 0, $benchmark, $format_bold);
+            $sheet3->write($xlsRow3, 0, $benchmark, $format_bold);
+            
             $xlsRow++;
-            $startRow = $xlsRow+1;
+            $startRow = $xlsRow + 1;
+
             $doAverage = array();
+            $values = array();
             // Loop through all the responses for the selected benchmark value
-            foreach ($v['responses'] as $respons) {               
-                $columnCount = 1;                
+            foreach ($v['responses'] as $respons) {
+                $columnCount = 1;
                 // For each respons write their answer
                 // If quesetion has answers stored in the answers table
                 // then replace the answer with the given value from the answers table
                 foreach ($respons as $question => $answer) {
                     if ($qa[$question]['parent_qid'] != 0 && isset($qa[$qa[$question]['parent_qid']]['answers'])) {
-                        if(isset($qa[$qa[$question]['parent_qid']]['answers'][$answer]['code']) && $useCodes === true){
+                        if (isset($qa[$qa[$question]['parent_qid']]['answers'][$answer]['code']) && $useCodes === true) {
                             $ans = $qa[$qa[$question]['parent_qid']]['answers'][$answer]['code'];
-                        }else{
+                        } else {
                             $ans = $qa[$qa[$question]['parent_qid']]['answers'][$answer]['answer'];
-                        }                        
+                        }
                     } elseif (isset($qa[$question]['answers'])) {
                         $ans = $qa[$question]['answers'][$answer]['answer'];
                     } else {
-                        $ans = $answer;                        
+                        $ans = $answer;
                     }
-                    if(!is_numeric($ans) && !empty($ans)){
+                    if (!is_numeric($ans) && !empty($ans)) {
                         $doAverage[$columnCount]['valid'] = false;
                     }
-                    if(!empty($ans)){
+                    if (!empty($ans)) {
                         $doAverage[$columnCount]['gotData'] = true;
                     }
                     $sheet->write($xlsRow, $columnCount, $ans);
+                    if(!empty($ans)){
+                        $values[$columnCount][] = $ans;
+                    }
                     $columnCount++;
                 }
                 $xlsRow++;
             }
             // Do avarage calculation on each answer if it is allowed
             for ($i = 1; $i < $columnCount; $i++) {
-                if(!isset($doAverage[$i]['valid']) && isset($doAverage[$i]['gotData'])){
-                    $column = $this->numtochars($i+1);
-                    $sheet->write($xlsRow, $i, '=AVERAGE('.$column.$startRow.':'.$column.$xlsRow.')', $format_2decimals);
-                }                
+                if (!isset($doAverage[$i]['valid']) && isset($doAverage[$i]['gotData'])) {
+                    $column = $this->numtochars($i + 1);
+                    $sheet->write($xlsRow, $i, '=AVERAGE(' . $column . $startRow . ':' . $column . $xlsRow . ')', $format_2decimals);
+                    // Excel writer does not support referring other sheets, so hardcode avarage values on sheet3 
+                    $avarage = array_sum($values[$i]) / count($values[$i]);                    
+                    $sheet3->write($xlsRow3, $i, $avarage, $format_2decimals);
+                }
             }
-            $xlsRow++;
+            $xlsRow++;            
             // Write count for each question / answer on statistic page
             foreach ($v['summary'] as $qid => $anwsers) {
                 $xlsRow2++;
                 $columnCount = 1;
                 // Write question field value                
-                //$sheet2->write($xlsRow2, $columnCount, html_entity_decode($qa[$qid]['question'],ENT_QUOTES, 'UTF-8'));   
-                if($questionRow){                    
+                if ($questionRow) {
                     $sheet->write(2, $questionColumn, $qa[$qid]['question']);
+                    $sheet3->write(2, $questionColumn, $qa[$qid]['question']);                    
                     $questionColumn++;
                 }
                 $sheet2->write($xlsRow2, $columnCount, $qa[$qid]['question']);
@@ -323,8 +350,7 @@ class Benchmark extends Survey_Common_Action {
                     $xlsRow2++;
                     if (empty($answer)) {
                         $ans = "No answer";
-                    }
-                    elseif ($qa[$qid]['parent_qid'] != 0 && isset($qa[$qa[$qid]['parent_qid']]['answers'])) {
+                    } elseif ($qa[$qid]['parent_qid'] != 0 && isset($qa[$qa[$qid]['parent_qid']]['answers'])) {
                         $ans = $qa[$qa[$qid]['parent_qid']]['answers'][$answer]['answer'];
                     } elseif (isset($qa[$qid]['answers'])) {
                         $ans = $qa[$qid]['answers'][$answer]['answer'];
@@ -338,14 +364,21 @@ class Benchmark extends Survey_Common_Action {
                     $sheet2->write($xlsRow2, $columnCount, $answerCount);
                     $columnCount++;
                     // Write out how many picked the perticular answer as percentage for the given benchmark
-                    $sheet2->write($xlsRow2, $columnCount, '='.$answerCount.'/'.$responsesCount, $format_percentage);
+                    $sheet2->write($xlsRow2, $columnCount, '=' . $answerCount . '/' . $responsesCount, $format_percentage);
                 }
                 $xlsRow2++;
-            }            
+            }
             $questionRow = false;
             $xlsRow2++;
             $xlsRow++;
+            $xlsRow3++;
         }
+        // Write aggregated avarages on sheet 3
+        for($i = 1; $i < $questionColumn; $i++){
+            $column = $this->numtochars($i+1);
+            $sheet3->write($xlsRow3, $i, '=AVERAGE(' . $column . $startRow3 . ':' . $column . $xlsRow3 . ')', $format_2decimals);
+        }
+            
         $workbook->send($filename);
         $workbook->close();
         exit();
@@ -388,7 +421,6 @@ class Benchmark extends Survey_Common_Action {
         }
         return $str;
     }
-
 }
 
 ?>
