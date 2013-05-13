@@ -244,7 +244,7 @@ class Benchmark extends Survey_Common_Action {
         $sheet2->write($xlsRow2, 0, $xlsDesc);
         $xlsRow2++;
         $xlsRow2++;
-        
+
         // Write title and description on sheet 3
         $sheet3->write($xlsRow3, 0, $xlsTitle);
         $xlsRow3++;
@@ -264,13 +264,15 @@ class Benchmark extends Survey_Common_Action {
         $format_bold_2decimals = & $workbook->addFormat();
         $format_bold_2decimals->setNumFormat("0.00");
         $format_bold_2decimals->setBold();
-        
+
         // Set 2 decimals format ( no bold)
         $format_2decimals = & $workbook->addFormat();
         $format_2decimals->setNumFormat("0.00");
-        
-        $format_aggregated_average =& $workbook->addFormat(array('top' => 5, 'pattern' => 1, 'bordercolor' => 'black'));
+
+        // Set 2 decimals and bold, black and white
+        $format_aggregated_average = & $workbook->addFormat(array('top' => 5, 'pattern' => 1, 'bordercolor' => 'black'));
         $format_aggregated_average->setBold();
+        $format_aggregated_average->setColor('white');
         $format_aggregated_average->setNumFormat("0.00");
 
         // used for writting question text on responses sheet
@@ -282,7 +284,7 @@ class Benchmark extends Survey_Common_Action {
         $sheet2->write(2, 2, 'Answer', $format_bold);
         $sheet2->write(2, 3, 'Count', $format_bold);
         $sheet2->write(2, 4, 'Percentage', $format_bold);
-        
+
         // Set start row for outputting avarages
         $startRow3 = $xlsRow3 + 1;
 
@@ -293,10 +295,11 @@ class Benchmark extends Survey_Common_Action {
             $sheet->write($xlsRow, 0, $benchmark, $format_bold);
             $sheet2->write($xlsRow2, 0, $benchmark, $format_bold);
             $sheet3->write($xlsRow3, 0, $benchmark, $format_bold);
-            
+
             $xlsRow++;
             $startRow = $xlsRow + 1;
 
+            $averages = array();
             $doAverage = array();
             $values = array();
             // Loop through all the responses for the selected benchmark value
@@ -319,12 +322,14 @@ class Benchmark extends Survey_Common_Action {
                     }
                     if (!is_numeric($ans) && !empty($ans)) {
                         $doAverage[$columnCount]['valid'] = false;
+                    } elseif(!empty($ans)) {
+                        $averages[$columnCount][] = $ans;
                     }
                     if (!empty($ans)) {
                         $doAverage[$columnCount]['gotData'] = true;
                     }
                     $sheet->write($xlsRow, $columnCount, $ans);
-                    if(!empty($ans)){
+                    if (!empty($ans)) {
                         $values[$columnCount][] = $ans;
                     }
                     $columnCount++;
@@ -337,11 +342,11 @@ class Benchmark extends Survey_Common_Action {
                     $column = $this->numtochars($i + 1);
                     $sheet->write($xlsRow, $i, '=AVERAGE(' . $column . $startRow . ':' . $column . $xlsRow . ')', $format_bold_2decimals);
                     // Excel writer does not support referring other sheets, so hardcode avarage values on sheet3 
-                    $avarage = array_sum($values[$i]) / count($values[$i]);                    
-                    $sheet3->write($xlsRow3, $i, $avarage, $format_2decimals);
+                    $avarage = array_sum($values[$i]) / count($values[$i]);
+                    $sheet3->write($xlsRow3, $i, $avarage, $format_2decimals);                    
                 }
             }
-            $xlsRow++;            
+            $xlsRow++;
             // Write count for each question / answer on statistic page
             foreach ($v['summary'] as $qid => $anwsers) {
                 $xlsRow2++;
@@ -349,7 +354,7 @@ class Benchmark extends Survey_Common_Action {
                 // Write question field value                
                 if ($questionRow) {
                     $sheet->write(2, $questionColumn, $qa[$qid]['question']);
-                    $sheet3->write(2, $questionColumn, $qa[$qid]['question']);                    
+                    $sheet3->write(2, $questionColumn, $qa[$qid]['question']);
                     $questionColumn++;
                 }
                 $sheet2->write($xlsRow2, $columnCount, $qa[$qid]['question']);
@@ -383,11 +388,23 @@ class Benchmark extends Survey_Common_Action {
         }
         // Write aggregated avarages on sheet 3
         $sheet3->write($xlsRow3, 0, 'Total (average):', $format_aggregated_average);
-        for($i = 1; $i < $questionColumn; $i++){
-            $column = $this->numtochars($i+1);
-            $sheet3->write($xlsRow3, $i, '=AVERAGE(' . $column . $startRow3 . ':' . $column . $xlsRow3 . ')', $format_aggregated_average);
+        for ($i = 1; $i < $questionColumn; $i++) {
+            if (!isset($doAverage[$i]['valid'])) {
+                $column = $this->numtochars($i + 1);
+                $sheet3->write($xlsRow3, $i, '=AVERAGE(' . $column . $startRow3 . ':' . $column . $xlsRow3 . ')', $format_aggregated_average);
+            } else {
+                $sheet3->write($xlsRow3, $i, 'N/A', $format_aggregated_average);
+                $sheet3->write($xlsRow3+1, $i, 'N/A', $format_aggregated_average);
+            }
         }
-            
+        
+        $xlsRow3++;
+        // Calculate weigthed average based on amount of responses pr. benchmark
+        $sheet3->write($xlsRow3, 0, 'Total (weighted):', $format_aggregated_average);
+        foreach ($averages as $column => $v) {
+            $average = array_sum($v) / count($v);
+            $sheet3->write($xlsRow3, $column, '='. array_sum($v) .'/'. count($v), $format_aggregated_average);
+        }
         $workbook->send($filename);
         $workbook->close();
         exit();
@@ -430,6 +447,7 @@ class Benchmark extends Survey_Common_Action {
         }
         return $str;
     }
+
 }
 
 ?>
