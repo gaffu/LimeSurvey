@@ -287,7 +287,9 @@ class Benchmark extends Survey_Common_Action {
 
         // Set start row for outputting avarages
         $startRow3 = $xlsRow3 + 1;
-
+        
+        $doAverages = array();
+        $averages = array();
         // Loop through all the benchmark values
         foreach ($statistics as $benchmark => $v) {
             $responsesCount = count($v['responses']);
@@ -297,9 +299,8 @@ class Benchmark extends Survey_Common_Action {
             $sheet3->write($xlsRow3, 0, $benchmark, $format_bold);
 
             $xlsRow++;
-            $startRow = $xlsRow + 1;
-
-            $averages = array();
+            $startRow = $xlsRow + 1;            
+            
             $doAverage = array();
             $values = array();
             // Loop through all the responses for the selected benchmark value
@@ -322,6 +323,9 @@ class Benchmark extends Survey_Common_Action {
                     }
                     if (!is_numeric($ans) && !empty($ans)) {
                         $doAverage[$columnCount]['valid'] = false;
+                        if(!isset($doAverages[$columnCount])){
+                            $doAverages[$columnCount] = false;
+                        }
                     } elseif(!empty($ans)) {
                         $averages[$columnCount][] = $ans;
                     }
@@ -389,7 +393,7 @@ class Benchmark extends Survey_Common_Action {
         // Write aggregated avarages on sheet 3
         $sheet3->write($xlsRow3, 0, 'Total (average):', $format_aggregated_average);
         for ($i = 1; $i < $questionColumn; $i++) {
-            if (!isset($doAverage[$i]['valid'])) {
+            if (!isset($doAverages[$i])) {
                 $column = $this->numtochars($i + 1);
                 $sheet3->write($xlsRow3, $i, '=AVERAGE(' . $column . $startRow3 . ':' . $column . $xlsRow3 . ')', $format_aggregated_average);
             } else {
@@ -402,7 +406,6 @@ class Benchmark extends Survey_Common_Action {
         // Calculate weigthed average based on amount of responses pr. benchmark
         $sheet3->write($xlsRow3, 0, 'Total (weighted):', $format_aggregated_average);
         foreach ($averages as $column => $v) {
-            $average = array_sum($v) / count($v);
             $sheet3->write($xlsRow3, $column, '='. array_sum($v) .'/'. count($v), $format_aggregated_average);
         }
         $workbook->send($filename);
