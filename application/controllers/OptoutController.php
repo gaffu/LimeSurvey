@@ -81,7 +81,7 @@ class OptoutController extends LSYii_Controller {
             else
             {
                 $usresult = $row['emailstatus'];
-                if ($usresult == 'OK')
+                if ($usresult != 'OptOut')
                 {
                     $usresult = Tokens_dynamic::model($iSurveyID)->updateEmailStatus($sToken, 'OptOut');
                     $html = $clang->gT('You have been successfully removed from this survey.');
